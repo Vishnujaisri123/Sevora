@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { X, User, Phone, Clock, Trash2, Calendar as CalIcon } from 'lucide-react';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
+import { getTeluguDateInfo } from '../utils/teluguCalendar';
 
 interface BookingFormData {
   clientName1: string;
@@ -45,6 +46,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
   });
 
   const [selectedDateVal, setSelectedDateVal] = useState<string>('');
+  const [showCalendarPicker, setShowCalendarPicker] = useState<boolean>(false);
+
+  // Calculate Telugu details for selected date
+  const selectedTeluguInfo = selectedDateVal ? getTeluguDateInfo(new Date(selectedDateVal)) : null;
+  const selectedDayName = selectedDateVal ? new Date(selectedDateVal).toLocaleDateString([], { weekday: 'long' }) : '';
 
   useEffect(() => {
     if (initialData) {
@@ -180,28 +186,105 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
         {/* Interactive Availability Calendar */}
         <div style={styles.field}>
-          <label className="form-label" style={labelStyle}>Select Darshan Date *</label>
-          <AvailabilityCalendar 
-            mode="single"
-            selectedDate={selectedDateVal}
-            onChangeSelectedDate={(date) => {
-              setSelectedDateVal(date);
-              setValue('bookersDate', date, { shouldValidate: true });
-              setValue('bookedDate', date, { shouldValidate: true });
-            }}
-            availableDates={enabledDates}
-          />
+          <label className="form-label" style={labelStyle}>Booking Date *</label>
+          
+          {enabledDates.length === 0 ? (
+            <div style={styles.noDatesAlert}>
+              ⚠️ No booking dates are currently available.
+            </div>
+          ) : (
+            <>
+              <div 
+                style={styles.clickableField} 
+                onClick={() => setShowCalendarPicker(!showCalendarPicker)}
+              >
+                <CalIcon size={16} style={styles.inputIcon} />
+                <input
+                  type="text"
+                  readOnly
+                  className="form-input"
+                  style={{ paddingLeft: '38px', cursor: 'pointer' }}
+                  value={selectedDateVal ? `${new Date(selectedDateVal).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}` : 'Click to select booking date'}
+                  placeholder="Click to select booking date"
+                />
+              </div>
+
+              {/* Collapsible Calendar Picker */}
+              {showCalendarPicker && (
+                <div style={styles.calendarDropdownContainer}>
+                  <AvailabilityCalendar 
+                    mode="single"
+                    selectedDate={selectedDateVal}
+                    onChangeSelectedDate={(date) => {
+                      setSelectedDateVal(date);
+                      setValue('bookersDate', date, { shouldValidate: true });
+                      setValue('bookedDate', date, { shouldValidate: true });
+                      setShowCalendarPicker(false); // Close calendar picker on select
+                    }}
+                    availableDates={enabledDates}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
           {/* Hidden inputs to preserve standard react-hook-form bindings */}
           <input type="hidden" {...register('bookersDate', { required: 'Booking Date is required' })} />
           <input type="hidden" {...register('bookedDate', { required: 'Booking Date is required' })} />
           {errors.bookersDate && <span style={styles.errorText}>{errors.bookersDate.message}</span>}
         </div>
 
-        {/* Display chosen Date details */}
-        {selectedDateVal && (
-          <div style={styles.selectedDateBadge}>
-            <CalIcon size={14} style={{ marginRight: '6px', color: '#00a884' }} />
-            <span>Selected Date: <strong>{new Date(selectedDateVal).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+        {/* Display chosen Date Telugu details */}
+        {selectedDateVal && selectedTeluguInfo && (
+          <div style={styles.selectedDateDetails}>
+            <div style={styles.detailTitle}>
+              <span style={{ fontSize: '18px' }}>📜</span>
+              <span style={{ fontWeight: '700', color: '#e9edef' }}>Telugu Calendar Details</span>
+            </div>
+            <div style={styles.detailGrid}>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Day Name:</span>
+                <span style={styles.detailVal}>{selectedDayName}</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Telugu Month:</span>
+                <span style={styles.detailVal}>{selectedTeluguInfo.month} Masam</span>
+              </div>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>Tithi (Lunar Date):</span>
+                <span style={styles.detailVal}>{selectedTeluguInfo.tithi} ({selectedTeluguInfo.paksha} Paksha)</span>
+              </div>
+              {(selectedTeluguInfo.isPournami || selectedTeluguInfo.isAmavasya) && (
+                <div style={styles.detailItem}>
+                  <span style={styles.detailLabel}>Lunar Event:</span>
+                  <span style={{ ...styles.detailVal, color: '#e9b10a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {selectedTeluguInfo.isPournami ? (
+                      <>
+                        <span style={{
+                          width: '9px',
+                          height: '9px',
+                          borderRadius: '50%',
+                          backgroundColor: '#ffffff',
+                          boxShadow: '0 0 5px #ffffff, 0 0 8px #ffffff',
+                          display: 'inline-block'
+                        }} /> Pournami (Full Moon)
+                      </>
+                    ) : (
+                      <>
+                        <span style={{
+                          width: '7px',
+                          height: '7px',
+                          borderRadius: '50%',
+                          backgroundColor: '#000000',
+                          border: '1.5px solid #ffffff',
+                          display: 'inline-block'
+                        }} /> Amavasya (New Moon)
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -217,7 +300,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               </div>
             ) : availableSlots.length === 0 ? (
               <div style={{ ...styles.slotWarning, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
-                ⚠️ No Time Slots Available
+                ⚠️ No time slots are available for the selected date.
               </div>
             ) : (
               <select
@@ -345,16 +428,72 @@ const styles: { [key: string]: React.CSSProperties } = {
     paddingTop: '16px',
     borderTop: '1px solid rgba(134, 150, 160, 0.15)',
   },
-  selectedDateBadge: {
+  clickableField: {
+    position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 168, 132, 0.06)',
-    border: '1px solid rgba(0, 168, 132, 0.15)',
-    padding: '8px 12px',
+    cursor: 'pointer'
+  },
+  calendarDropdownContainer: {
+    marginTop: '8px',
+    backgroundColor: '#111b21',
+    border: '1px solid rgba(134, 150, 160, 0.2)',
+    borderRadius: '8px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+    overflow: 'hidden',
+    zIndex: 10
+  },
+  noDatesAlert: {
+    width: '100%',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    border: '1px solid rgba(239, 68, 68, 0.2)',
+    padding: '12px 14px',
     borderRadius: '6px',
+    fontSize: '0.88rem',
+    color: '#ef4444',
+    textAlign: 'center',
+    fontWeight: '500'
+  },
+  selectedDateDetails: {
+    backgroundColor: 'rgba(0, 168, 132, 0.04)',
+    border: '1px solid rgba(0, 168, 132, 0.12)',
+    borderRadius: '8px',
+    padding: '12px 14px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    marginTop: '6px'
+  },
+  detailTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '0.9rem',
+    fontWeight: '700',
+    color: '#e9edef',
+    borderBottom: '1px solid rgba(0, 168, 132, 0.1)',
+    paddingBottom: '6px'
+  },
+  detailGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '8px 16px'
+  },
+  detailItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px'
+  },
+  detailLabel: {
+    fontSize: '0.72rem',
+    color: '#8696a0',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  detailVal: {
     fontSize: '0.85rem',
-    color: '#00a884',
-    marginTop: '8px'
+    color: '#e9edef',
+    fontWeight: '600'
   },
   slotWarning: {
     width: '100%',

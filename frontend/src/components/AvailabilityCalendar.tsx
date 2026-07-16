@@ -175,14 +175,29 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           }}
           title={tooltipText}
         >
-          <span style={styles.dateNumber}>{day}</span>
+          <span style={{ 
+            ...styles.dateNumber,
+            color: isSelected ? '#ffffff' : isToday ? 'var(--accent-color)' : '#e9edef'
+          }}>{day}</span>
           
+          {/* Metadata directly in the cell for enabled dates */}
+          {isAvailable && mode === 'single' && !isSelected && (
+            <div style={styles.cellMetadata}>
+              <span style={styles.metaMonth}>{teluguInfo.month.substring(0, 3)}</span>
+              <span style={styles.metaTithi}>{teluguInfo.tithi.replace('Pratipada', 'Prati').replace('Trayodashi', 'Trayo').replace('Chaturdashi', 'Chatur').substring(0, 5)}</span>
+            </div>
+          )}
+
           {/* Lunar Event Highlights */}
           {teluguInfo.isPournami && (
-            <span style={styles.moonIcon} title="Pournami (Full Moon)">🌕</span>
+            <div style={styles.moonIconWrapper} title="Pournami (Full Moon)">
+              <span style={styles.brightWhiteFullMoon} />
+            </div>
           )}
           {teluguInfo.isAmavasya && (
-            <span style={styles.moonIcon} title="Amavasya (New Moon)">🌑</span>
+            <div style={styles.moonIconWrapper} title="Amavasya (New Moon)">
+              <span style={styles.blackMoonWhiteOutline} />
+            </div>
           )}
           
           {/* Small dot indicating config exists (Admin mode) */}
@@ -417,11 +432,45 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: 'transparent',
     border: '1px dashed rgba(134, 150, 160, 0.1)'
   },
-  moonIcon: {
-    fontSize: '0.85rem',
-    position: 'absolute',
-    bottom: '2px',
-    lineHeight: '1'
+  moonIconWrapper: {
+    position: 'absolute' as const,
+    bottom: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  brightWhiteFullMoon: {
+    width: '9px',
+    height: '9px',
+    borderRadius: '50%',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 0 5px #ffffff, 0 0 8px #ffffff',
+    display: 'inline-block'
+  },
+  blackMoonWhiteOutline: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    backgroundColor: '#000000',
+    border: '1.5px solid #ffffff',
+    display: 'inline-block'
+  },
+  cellMetadata: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    fontSize: '0.62rem',
+    lineHeight: '1.1',
+    marginTop: '2px'
+  },
+  metaMonth: {
+    fontWeight: '700',
+    color: '#00a884',
+    fontSize: '0.52rem'
+  },
+  metaTithi: {
+    fontSize: '0.48rem',
+    color: '#8696a0'
   },
   configDot: {
     width: '4px',
