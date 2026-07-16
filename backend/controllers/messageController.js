@@ -96,7 +96,9 @@ exports.sendMessage = async (req, res) => {
     // Notify recipient (Admin or assigned Employee)
     const recipientId = req.user.role === 'admin' ? ticket.employeeId : (ticket.adminId || null);
     if (recipientId) {
-      const msgNotification = `${req.user.username} sent a message regarding client ${ticket.clientName1} & ${ticket.clientName2}: "${content.substring(0, 40)}${content.length > 40 ? '...' : ''}"`;
+      const msgNotification = req.user.role === 'admin' 
+        ? `${req.user.username} sent a message regarding client ${ticket.clientName1} & ${ticket.clientName2}: "${content.substring(0, 40)}${content.length > 40 ? '...' : ''}"`
+        : `message from employee ${req.user.username}\n${content}`;
       
       const newNotif = new Notification({
         userId: recipientId,
@@ -169,7 +171,9 @@ exports.sendFileMessage = async (req, res) => {
     // Notify recipient
     const recipientId = req.user.role === 'admin' ? ticket.employeeId : (ticket.adminId || null);
     if (recipientId) {
-      const msgNotification = `${req.user.username} sent a file attachment for client ${ticket.clientName1} & ${ticket.clientName2}`;
+      const msgNotification = req.user.role === 'admin'
+        ? `${req.user.username} sent a file attachment for client ${ticket.clientName1} & ${ticket.clientName2}`
+        : `message from employee ${req.user.username}\n[File Attachment]`;
       
       const newNotif = new Notification({
         userId: recipientId,

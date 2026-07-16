@@ -82,6 +82,20 @@ const EmployeeDashboard: React.FC = () => {
     initData();
   }, []);
 
+  // Automatically mark notifications read when selecting a ticket
+  useEffect(() => {
+    if (selectedTicket?._id && notifications.length > 0) {
+      const ticketId = selectedTicket._id;
+      const unreadIds = notifications
+        .filter((n: any) => !n.isRead && n.ticketId === ticketId)
+        .map((n: any) => n._id);
+
+      if (unreadIds.length > 0) {
+        handleMarkNotificationsRead(unreadIds);
+      }
+    }
+  }, [selectedTicket?._id, notifications]);
+
   // Set up socket listeners for real-time status and notifications
   useEffect(() => {
     if (socket) {

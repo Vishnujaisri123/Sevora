@@ -243,6 +243,20 @@ const AdminDashboard: React.FC = () => {
     }
   }, [selectedTicket]);
 
+  // Automatically mark notifications read when selecting a ticket
+  useEffect(() => {
+    if (selectedTicket?._id && notifications.length > 0) {
+      const ticketId = selectedTicket._id;
+      const unreadIds = notifications
+        .filter((n: any) => !n.isRead && n.ticketId === ticketId)
+        .map((n: any) => n._id);
+
+      if (unreadIds.length > 0) {
+        handleMarkNotificationsRead(unreadIds);
+      }
+    }
+  }, [selectedTicket?._id, notifications]);
+
   // Socket triggers for real-time ticket updates
   useEffect(() => {
     if (socket) {
