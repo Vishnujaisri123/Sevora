@@ -39,7 +39,7 @@ const AdminDashboard: React.FC = () => {
   
   // Search, Filters & Analytics toggle
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('Waiting for Admin');
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showNotifDrawer, setShowNotifDrawer] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'timeline' | 'files'>('info');
@@ -526,7 +526,7 @@ const AdminDashboard: React.FC = () => {
 
           {/* Status filter tabs */}
           <div style={styles.filtersBar}>
-            {['All', 'Waiting for Admin', 'Processing', 'Ticket Generated', 'Completed', 'Draft', 'Cancelled'].map((f) => (
+            {['Waiting for Admin', 'Processing', 'Completed', 'All'].map((f) => (
               <button
                 key={f}
                 onClick={() => { setStatusFilter(f); setShowAnalytics(false); setShowAvailability(false); }}
@@ -537,7 +537,7 @@ const AdminDashboard: React.FC = () => {
                   borderColor: statusFilter === f ? 'var(--accent-color)' : 'transparent'
                 }}
               >
-                {f.replace('Waiting for Admin', 'Requests').replace('Ticket Generated', 'Generated')}
+                {f.replace('Waiting for Admin', 'Requests')}
               </button>
             ))}
           </div>
