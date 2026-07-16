@@ -273,7 +273,10 @@ exports.sendToAdmin = async (req, res) => {
 
     // Notify all admins
     const admins = await User.find({ role: 'admin' });
-    const notificationMessage = `New booking request submitted by ${req.user.username}\n${ticket.clientName1} & ${ticket.clientName2}`;
+    const notificationMessage = `New booking request by the client: ${ticket.clientName1}
+employee Name : ${req.user.username}
+client Names : ${ticket.clientName1} & ${ticket.clientName2}
+ticket Number : ${ticket._id}`;
     
     for (const admin of admins) {
       await createNotification(admin._id, ticket._id, 'ticket_assignment', notificationMessage);
@@ -285,6 +288,7 @@ exports.sendToAdmin = async (req, res) => {
       io.to('admins').emit('new_ticket_submitted', {
         ticketId: ticket._id,
         clientName: `${ticket.clientName1} & ${ticket.clientName2}`,
+        clientName1: ticket.clientName1,
         templeName: ticket.templeName,
         status: ticket.status,
         submittedBy: req.user.username

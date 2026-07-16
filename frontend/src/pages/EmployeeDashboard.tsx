@@ -628,7 +628,7 @@ const EmployeeDashboard: React.FC = () => {
       {/* Toast Popup Notifications */}
       <div style={{
         position: 'fixed',
-        bottom: '24px',
+        top: '24px',
         right: '24px',
         zIndex: 9999,
         display: 'flex',
@@ -642,7 +642,7 @@ const EmployeeDashboard: React.FC = () => {
           {toasts.map(toast => (
             <motion.div
               key={toast.id}
-              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              initial={{ opacity: 0, y: -50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
               layout
@@ -704,7 +704,7 @@ const EmployeeDashboard: React.FC = () => {
                   ✕
                 </button>
               </div>
-              <p style={{ fontSize: '0.82rem', margin: 0, color: '#d1d7db', lineHeight: '1.4' }}>{toast.message}</p>
+              <p style={{ fontSize: '0.82rem', margin: 0, color: '#d1d7db', lineHeight: '1.4', whiteSpace: 'pre-line' }}>{toast.message}</p>
               {toast.ticketId && (
                 <span style={{ fontSize: '0.72rem', color: 'var(--accent-color)', textDecoration: 'underline', marginTop: '2px', fontWeight: '500' }}>
                   Click to view details
