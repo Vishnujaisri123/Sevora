@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Bell, Shield, User, X } from 'lucide-react';
+import { LogOut, Bell, Shield, User, X, Calendar } from 'lucide-react';
 
 interface NavbarProps {
   unreadNotifications: number;
   onToggleNotifications: () => void;
   title?: string;
+  onToggleAvailability?: () => void;
+  showAvailability?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ unreadNotifications, onToggleNotifications, title }) => {
+const Navbar: React.FC<NavbarProps> = ({ 
+  unreadNotifications, 
+  onToggleNotifications, 
+  title,
+  onToggleAvailability,
+  showAvailability
+}) => {
   const { user, logout, updateUser } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [editUsername, setEditUsername] = useState('');
@@ -52,6 +60,33 @@ const Navbar: React.FC<NavbarProps> = ({ unreadNotifications, onToggleNotificati
       </div>
 
       <div style={styles.actions}>
+        {/* Temple Availability (Admin only) */}
+        {user && user.role === 'admin' && onToggleAvailability && (
+          <button 
+            onClick={onToggleAvailability} 
+            style={{
+              ...styles.actionBtn,
+              color: showAvailability ? '#00a884' : '#aebac1'
+            }} 
+            title="Temple Availability Calendar"
+          >
+            <div style={styles.bellWrapper}>
+              <Calendar size={20} />
+              {showAvailability && (
+                <span style={{ 
+                  position: 'absolute',
+                  top: '-2px',
+                  right: '-2px',
+                  width: '8px',
+                  height: '8px',
+                  backgroundColor: '#00a884',
+                  borderRadius: '50%'
+                }} />
+              )}
+            </div>
+          </button>
+        )}
+
         {/* Real-time Notifications Bell */}
         <button 
           onClick={onToggleNotifications} 

@@ -73,14 +73,28 @@ const AdminDashboard: React.FC = () => {
       { time: '06:00 AM - 07:00 AM', active: true },
       { time: '07:00 AM - 08:00 AM', active: true },
       { time: '08:00 AM - 09:00 AM', active: true },
-      { time: '09:00 AM - 10:00 AM', active: true }
+      { time: '09:00 AM - 10:00 AM', active: true },
+      { time: '10:00 AM - 11:00 AM', active: true },
+      { time: '11:00 AM - 12:00 PM', active: true },
+      { time: '12:00 PM - 01:00 PM', active: true },
+      { time: '04:00 PM - 05:00 PM', active: true },
+      { time: '05:00 PM - 06:00 PM', active: true },
+      { time: '06:00 PM - 07:00 PM', active: true },
+      { time: '07:00 PM - 08:00 PM', active: true },
+      { time: '08:00 PM - 09:00 PM', active: true }
     ];
 
     selectedDates.forEach(date => {
       if (!updatedSlots[date]) {
         const existing = availabilityData.find(a => a.dateString === date);
         if (existing) {
-          updatedSlots[date] = existing.slots.map((s: any) => ({ time: s.time, active: s.active }));
+          updatedSlots[date] = DEFAULT_SLOTS.map(dSlot => {
+            const match = existing.slots.find((s: any) => s.time === dSlot.time);
+            return {
+              time: dSlot.time,
+              active: match ? match.active : true
+            };
+          });
         } else {
           updatedSlots[date] = DEFAULT_SLOTS.map(s => ({ ...s }));
         }
@@ -474,7 +488,13 @@ const AdminDashboard: React.FC = () => {
       <Navbar 
         unreadNotifications={unreadNotifications} 
         onToggleNotifications={() => setShowNotifDrawer(true)} 
-        title="Admin Portal - Temple Bookings Desk"
+        title="Admin Portal – Temple Bookings Desk"
+        onToggleAvailability={() => {
+          setShowAvailability(!showAvailability);
+          setShowAnalytics(false);
+          setSelectedTicket(null);
+        }}
+        showAvailability={showAvailability}
       />
 
       <div className="main-content">
@@ -482,26 +502,6 @@ const AdminDashboard: React.FC = () => {
             LEFT SIDEBAR (WhatsApp Conversations List)
             ========================================== */}
         <div className="whatsapp-sidebar">
-          {/* Admin Desk Header and Availability Menu Item */}
-          <div style={styles.deskHeader}>
-            <h4 style={styles.deskTitle}>Admin Portal – Temple Bookings Desk</h4>
-            <button
-              onClick={() => {
-                setShowAvailability(true);
-                setShowAnalytics(false);
-                setSelectedTicket(null);
-              }}
-              style={{
-                ...styles.deskMenuBtn,
-                backgroundColor: showAvailability ? 'rgba(0, 168, 132, 0.12)' : 'transparent',
-                borderColor: showAvailability ? '#00a884' : 'rgba(134, 150, 160, 0.15)',
-                color: showAvailability ? '#00a884' : '#e9edef'
-              }}
-            >
-              📅 Temple Availability
-            </button>
-          </div>
-
           {/* Sidebar Header controls */}
           <div style={styles.sidebarHeader}>
             <div style={styles.sidebarActions}>
@@ -811,63 +811,26 @@ const AdminDashboard: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* List of slots with toggle active & remove option */}
+                            {/* List of slots with toggle active */}
                             <div style={styles.slotsGridList}>
-                              {slots.length === 0 ? (
-                                <p style={styles.noSlotsText}>No slots defined. Add one below.</p>
-                              ) : (
-                                slots.map((s, idx) => (
-                                  <div key={idx} style={styles.slotOptionRow}>
-                                    <label style={styles.slotCheckboxLabel}>
-                                      <input 
-                                        type="checkbox"
-                                        checked={s.active}
-                                        onChange={() => toggleSlotActive(date, idx)}
-                                        style={styles.slotCheckbox}
-                                      />
-                                      <span style={{ 
-                                        fontSize: '0.85rem', 
-                                        color: s.active ? '#e9edef' : '#8696a0',
-                                        textDecoration: s.active ? 'none' : 'line-through'
-                                      }}>
-                                        {s.time}
-                                      </span>
-                                    </label>
-                                    <button 
-                                      onClick={() => removeSlotOption(date, idx)}
-                                      style={styles.removeSlotBtn}
-                                      title="Remove slot option"
-                                    >
-                                      <X size={12} />
-                                    </button>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-
-                            {/* Add custom slot field */}
-                            <div style={styles.addSlotWrapper}>
-                              <input 
-                                type="text"
-                                className="form-input"
-                                placeholder="e.g. 10:00 AM - 11:00 AM"
-                                value={customText}
-                                onChange={(e) => setCustomSlotTexts(prev => ({ ...prev, [date]: e.target.value }))}
-                                style={styles.addSlotInput}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    addCustomSlot(date);
-                                  }
-                                }}
-                              />
-                              <button 
-                                onClick={() => addCustomSlot(date)}
-                                className="btn-secondary"
-                                style={styles.addSlotBtn}
-                              >
-                                + Add
-                              </button>
+                              {slots.map((s, idx) => (
+                                <div key={idx} style={styles.slotOptionRow}>
+                                  <label style={styles.slotCheckboxLabel}>
+                                    <input 
+                                      type="checkbox"
+                                      checked={s.active}
+                                      onChange={() => toggleSlotActive(date, idx)}
+                                      style={styles.slotCheckbox}
+                                    />
+                                    <span style={{ 
+                                      fontSize: '0.85rem', 
+                                      color: s.active ? '#e9edef' : '#8696a0'
+                                    }}>
+                                      {s.time}
+                                    </span>
+                                  </label>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         );
