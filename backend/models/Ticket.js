@@ -10,6 +10,10 @@ const PdfHistorySchema = new mongoose.Schema({
 });
 
 const TicketSchema = new mongoose.Schema({
+  serialNumber: {
+    type: Number,
+    unique: true
+  },
   clientName1: {
     type: String,
     required: true,

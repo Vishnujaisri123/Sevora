@@ -425,7 +425,14 @@ const EmployeeDashboard: React.FC = () => {
                       <tr key={ticket._id} style={styles.trBody}>
                         <td style={styles.td}>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={styles.clientName}>{ticket.clientName1} & {ticket.clientName2}</span>
+                            <span style={styles.clientName}>
+                              {ticket.serialNumber && (
+                                <span style={{ color: '#00e676', marginRight: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                                  #{ticket.serialNumber}
+                                </span>
+                              )}
+                              {ticket.clientName1} & {ticket.clientName2}
+                            </span>
                             <span style={styles.clientPhone}>{ticket.mobileNumber || 'No Phone'}</span>
                             {ticket.gothram && (
                               <span style={{ fontSize: '0.74rem', color: 'var(--accent-color)', marginTop: '2px', fontWeight: '500' }}>
@@ -619,6 +626,7 @@ const EmployeeDashboard: React.FC = () => {
                 recipientRole={getChatRecipient(selectedTicket).role}
                 onClose={() => setShowChatDrawer(false)}
                 ticketStatus={selectedTicket.status}
+                serialNumber={selectedTicket.serialNumber}
               />
             </motion.div>
           </>

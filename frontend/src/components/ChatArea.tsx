@@ -37,6 +37,7 @@ interface ChatAreaProps {
   recipientRole: 'admin' | 'employee';
   onClose?: () => void;
   ticketStatus: string;
+  serialNumber?: number;
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({
@@ -45,7 +46,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   recipientName,
   recipientRole,
   onClose,
-  ticketStatus
+  ticketStatus,
+  serialNumber
 }) => {
   const { user } = useAuth();
   const { socket } = useSocket();
@@ -422,7 +424,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             </span>
           </div>
           <div style={styles.recipientMeta}>
-            <h4 style={styles.recipientName}>{recipientName}</h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h4 style={styles.recipientName}>{recipientName}</h4>
+              {serialNumber && (
+                <span style={{ 
+                  backgroundColor: 'rgba(0, 230, 118, 0.15)', 
+                  color: '#00e676', 
+                  fontSize: '0.72rem', 
+                  fontWeight: 'bold', 
+                  padding: '2px 6px', 
+                  borderRadius: '6px' 
+                }}>
+                  #{serialNumber}
+                </span>
+              )}
+            </div>
             <span style={styles.onlineText}>
               {recipientTyping ? (
                 <span style={{ color: 'var(--accent-hover)', fontWeight: '600' }}>typing...</span>

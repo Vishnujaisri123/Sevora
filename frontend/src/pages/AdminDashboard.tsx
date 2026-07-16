@@ -267,7 +267,7 @@ const AdminDashboard: React.FC = () => {
           `New booking request by the client: ${data.clientName1 || data.clientName.split('&')[0].trim()}
 employee Name : ${data.submittedBy}
 client Names : ${data.clientName}
-ticket Number : ${data.ticketId}`, 
+ticket Number : #${data.serialNumber}`, 
           'success', 
           'New Booking', 
           data.ticketId
@@ -590,7 +590,14 @@ ticket Number : ${data.ticketId}`,
                     
                     <div style={styles.convoContent}>
                       <div style={styles.convoRow}>
-                        <span style={styles.convoName}>{ticket.clientName1} & {ticket.clientName2}</span>
+                        <span style={styles.convoName}>
+                          {ticket.serialNumber && (
+                            <span style={{ color: '#00e676', marginRight: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                              #{ticket.serialNumber}
+                            </span>
+                          )}
+                          {ticket.clientName1} & {ticket.clientName2}
+                        </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={styles.convoTime}>
                             {new Date(ticket.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -862,6 +869,7 @@ ticket Number : ${data.ticketId}`,
               recipientName={selectedTicket.employeeId?.username || 'Employee'}
               recipientRole="employee"
               ticketStatus={selectedTicket.status}
+              serialNumber={selectedTicket.serialNumber}
             />
           ) : (
             /* EMPTY CHAT SCREEN */
@@ -969,6 +977,14 @@ ticket Number : ${data.ticketId}`,
                       <div style={styles.infoItem}>
                         <span style={styles.infoLabel}>Agent</span>
                         <span style={styles.infoValue}>@{ticketDetails.employeeId?.username}</span>
+                      </div>
+                      <div style={styles.infoItem}>
+                        <span style={styles.infoLabel}>Serial Number</span>
+                        <span style={styles.infoValue}>
+                          <span style={{ color: '#00e676', fontWeight: 'bold' }}>
+                            #{ticketDetails.serialNumber || 'N/A'}
+                          </span>
+                        </span>
                       </div>
                       <div style={styles.infoItem}>
                         <span style={styles.infoLabel}>Payment</span>

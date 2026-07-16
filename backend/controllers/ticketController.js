@@ -47,7 +47,12 @@ exports.createTicket = async (req, res) => {
       return res.status(400).json({ message: 'Missing required client fields' });
     }
 
+    // Find the highest serialNumber
+    const lastTicket = await Ticket.findOne().sort({ serialNumber: -1 });
+    const nextSerialNumber = lastTicket && lastTicket.serialNumber ? lastTicket.serialNumber + 1 : 1;
+
     const ticket = new Ticket({
+      serialNumber: nextSerialNumber,
       clientName1,
       clientName2,
       gothram,
@@ -276,7 +281,7 @@ exports.sendToAdmin = async (req, res) => {
     const notificationMessage = `New booking request by the client: ${ticket.clientName1}
 employee Name : ${req.user.username}
 client Names : ${ticket.clientName1} & ${ticket.clientName2}
-ticket Number : ${ticket._id}`;
+ticket Number : #${ticket.serialNumber}`;
     
     for (const admin of admins) {
       await createNotification(admin._id, ticket._id, 'ticket_assignment', notificationMessage);
@@ -287,6 +292,7 @@ ticket Number : ${ticket._id}`;
     if (io) {
       io.to('admins').emit('new_ticket_submitted', {
         ticketId: ticket._id,
+        serialNumber: ticket.serialNumber,
         clientName: `${ticket.clientName1} & ${ticket.clientName2}`,
         clientName1: ticket.clientName1,
         templeName: ticket.templeName,

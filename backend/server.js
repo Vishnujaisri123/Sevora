@@ -97,6 +97,27 @@ const seedAdmin = async () => {
   }
 };
 
+const migrateSerialNumbers = async () => {
+  try {
+    const Ticket = require('./models/Ticket');
+    const ticketsWithoutSerial = await Ticket.find({ serialNumber: { $exists: false } }).sort({ createdAt: 1 });
+    if (ticketsWithoutSerial.length > 0) {
+      console.log(`Found ${ticketsWithoutSerial.length} tickets without serialNumber. Migrating...`);
+      const lastTicket = await Ticket.findOne({ serialNumber: { $exists: true } }).sort({ serialNumber: -1 });
+      let nextSerial = lastTicket && lastTicket.serialNumber ? lastTicket.serialNumber + 1 : 1;
+
+      for (const ticket of ticketsWithoutSerial) {
+        ticket.serialNumber = nextSerial;
+        await ticket.save();
+        nextSerial++;
+      }
+      console.log('Serial number migration completed successfully.');
+    }
+  } catch (err) {
+    console.error('Error migrating serial numbers:', err);
+  }
+};
+
 // MongoDB connection and Server start
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/temple_tickets';
@@ -116,6 +137,7 @@ const connectDB = async () => {
     }
   }
   await seedAdmin();
+  await migrateSerialNumbers();
   server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
