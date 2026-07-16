@@ -683,6 +683,14 @@ ticket Number : #${data.serialNumber}`,
                   <h3 style={{ ...styles.statValue, color: 'var(--status-completed)' }}>{stats.completed}</h3>
                 </div>
                 <div className="glass-panel" style={styles.statBox}>
+                  <span style={styles.statLabel}>Total Money (₹200/ticket)</span>
+                  <h3 style={{ ...styles.statValue, color: '#00e676' }}>₹{stats.completed * 200}</h3>
+                </div>
+                <div className="glass-panel" style={styles.statBox}>
+                  <span style={styles.statLabel}>Profit (₹50/ticket)</span>
+                  <h3 style={{ ...styles.statValue, color: '#00b0ff' }}>₹{stats.completed * 50}</h3>
+                </div>
+                <div className="glass-panel" style={styles.statBox}>
                   <span style={styles.statLabel}>PhonePe Payments</span>
                   <h3 style={{ ...styles.statValue, color: '#a78bfa' }}>{stats.phonePe}</h3>
                 </div>
