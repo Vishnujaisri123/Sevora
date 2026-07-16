@@ -120,6 +120,34 @@ const BookingForm: React.FC<BookingFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} style={styles.form}>
+        {/* Full-width Calendar Overlay when active */}
+        {showCalendarPicker && enabledDates.length > 0 && (
+          <div style={styles.calendarDropdownContainer}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(134, 150, 160, 0.15)', backgroundColor: '#111b21' }}>
+              <span style={{ fontWeight: '700', color: '#e9edef', fontSize: '0.95rem' }}>Select Darshan Date</span>
+              <button 
+                type="button" 
+                onClick={() => setShowCalendarPicker(false)}
+                style={{ background: 'none', border: 'none', color: '#8696a0', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: '12px', flex: 1, overflowY: 'auto' }}>
+              <AvailabilityCalendar 
+                mode="single"
+                selectedDate={selectedDateVal}
+                onChangeSelectedDate={(date) => {
+                  setSelectedDateVal(date);
+                  setValue('bookersDate', date, { shouldValidate: true });
+                  setValue('bookedDate', date, { shouldValidate: true });
+                  setShowCalendarPicker(false); // Close calendar picker on select
+                }}
+                availableDates={enabledDates}
+              />
+            </div>
+          </div>
+        )}
         {/* Client Names Section */}
         <div style={styles.row}>
           <div style={styles.field}>
@@ -191,7 +219,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
         </div>
 
-        {/* Interactive Availability Calendar */}
+        {/* Interactive Availability Calendar Input */}
         <div style={styles.field}>
           <label className="form-label" style={labelStyle}>Booking Date *</label>
           
@@ -200,39 +228,20 @@ const BookingForm: React.FC<BookingFormProps> = ({
               ⚠️ No booking dates are currently available.
             </div>
           ) : (
-            <>
-              <div 
-                style={styles.clickableField} 
-                onClick={() => setShowCalendarPicker(!showCalendarPicker)}
-              >
-                <CalIcon size={16} style={styles.inputIcon} />
-                <input
-                  type="text"
-                  readOnly
-                  className="form-input"
-                  style={{ paddingLeft: '38px', cursor: 'pointer' }}
-                  value={getFormattedDateDisplay(selectedDateVal)}
-                  placeholder="Click to select booking date"
-                />
-              </div>
-
-              {/* Collapsible Calendar Picker */}
-              {showCalendarPicker && (
-                <div style={styles.calendarDropdownContainer}>
-                  <AvailabilityCalendar 
-                    mode="single"
-                    selectedDate={selectedDateVal}
-                    onChangeSelectedDate={(date) => {
-                      setSelectedDateVal(date);
-                      setValue('bookersDate', date, { shouldValidate: true });
-                      setValue('bookedDate', date, { shouldValidate: true });
-                      setShowCalendarPicker(false); // Close calendar picker on select
-                    }}
-                    availableDates={enabledDates}
-                  />
-                </div>
-              )}
-            </>
+            <div 
+              style={styles.clickableField} 
+              onClick={() => setShowCalendarPicker(true)}
+            >
+              <CalIcon size={16} style={styles.inputIcon} />
+              <input
+                type="text"
+                readOnly
+                className="form-input"
+                style={{ paddingLeft: '38px', cursor: 'pointer' }}
+                value={getFormattedDateDisplay(selectedDateVal)}
+                placeholder="Click to select booking date"
+              />
+            </div>
           )}
 
           {/* Hidden inputs to preserve standard react-hook-form bindings */}
@@ -349,6 +358,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     flexDirection: 'column',
     gap: '16px',
     paddingTop: '20px',
+    position: 'relative',
+    minHeight: '520px'
   },
   row: {
     display: 'flex',
@@ -390,8 +401,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer'
   },
   calendarDropdownContainer: {
-    marginTop: '12px',
-    width: '100%'
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#111b21',
+    zIndex: 50,
+    display: 'flex',
+    flexDirection: 'column',
+    borderRadius: '12px',
+    border: '1px solid rgba(134, 150, 160, 0.15)',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+    overflow: 'hidden'
   },
   noDatesAlert: {
     width: '100%',
