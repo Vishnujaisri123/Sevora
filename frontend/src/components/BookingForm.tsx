@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { X, Calendar, User, Phone, Clock, Trash2 } from 'lucide-react';
+import { X, User, Phone, Clock, Trash2, Calendar as CalIcon } from 'lucide-react';
+import { AvailabilityCalendar } from './AvailabilityCalendar';
 
 interface BookingFormData {
   clientName1: string;
@@ -19,9 +20,17 @@ interface BookingFormProps {
   onCancel: () => void;
   onDelete?: () => void;
   isLoading?: boolean;
+  activeAvailability?: any[]; // Dynamic slots metadata
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ initialData, onSubmit, onCancel, onDelete, isLoading }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ 
+  initialData, 
+  onSubmit, 
+  onCancel, 
+  onDelete, 
+  isLoading,
+  activeAvailability = []
+}) => {
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<BookingFormData>({
     defaultValues: {
       clientName1: '',
@@ -30,10 +39,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ initialData, onSubmit, onCanc
       mobileNumber: '',
       bookersDate: '',
       bookedDate: '',
-      timeSlot: '06:00 AM - 07:00 AM',
+      timeSlot: '',
       paymentStatus: 'Draft'
     }
   });
+
+  const [selectedDateVal, setSelectedDateVal] = useState<string>('');
 
   useEffect(() => {
     if (initialData) {
@@ -43,20 +54,39 @@ const BookingForm: React.FC<BookingFormProps> = ({ initialData, onSubmit, onCanc
       setValue('gothram', initialData.gothram || '');
       setValue('mobileNumber', initialData.mobileNumber || '');
       
-      // Format date strings for HTML date inputs: YYYY-MM-DD
+      // Format date strings for hidden inputs: YYYY-MM-DD
       if (initialData.bookersDate) {
         const d = new Date(initialData.bookersDate);
-        setValue('bookersDate', d.toISOString().split('T')[0]);
-      }
-      if (initialData.bookedDate) {
-        const d = new Date(initialData.bookedDate);
-        setValue('bookedDate', d.toISOString().split('T')[0]);
+        const dateStr = d.toISOString().split('T')[0];
+        setSelectedDateVal(dateStr);
+        setValue('bookersDate', dateStr);
+        setValue('bookedDate', dateStr);
       }
       
-      setValue('timeSlot', initialData.timeSlot);
       setValue('paymentStatus', initialData.paymentStatus || 'Draft');
     }
   }, [initialData, setValue]);
+
+  // Extract list of dates that are configured with slots
+  const enabledDates = activeAvailability.map((a: any) => a.dateString);
+  
+  // Find slots for current selected date
+  const selectedConfig = activeAvailability.find((a: any) => a.dateString === selectedDateVal);
+  const availableSlots = selectedConfig ? selectedConfig.slots.filter((s: any) => s.active) : [];
+
+  // Update form's selected slot when date changes
+  useEffect(() => {
+    if (selectedDateVal) {
+      if (availableSlots.length > 0) {
+        // Preserves existing time slot value if still valid, otherwise falls back to the first available
+        const currentSlot = initialData?.timeSlot;
+        const isStillAvailable = availableSlots.some((s: any) => s.time === currentSlot);
+        setValue('timeSlot', isStillAvailable ? currentSlot : availableSlots[0].time);
+      } else {
+        setValue('timeSlot', '');
+      }
+    }
+  }, [selectedDateVal, activeAvailability, setValue]);
 
   // Styling override for larger form labels
   const labelStyle = {
@@ -148,57 +178,61 @@ const BookingForm: React.FC<BookingFormProps> = ({ initialData, onSubmit, onCanc
           </div>
         </div>
 
-        {/* Booker's Date & Booked Date */}
-        <div style={styles.row}>
-          <div style={styles.field}>
-            <label className="form-label" htmlFor="bookersDate" style={labelStyle}>Booker's Date *</label>
-            <div style={styles.inputWrapper}>
-              <input
-                id="bookersDate"
-                type="date"
-                className="form-input"
-                {...register('bookersDate', { 
-                  required: "Booker's Date is required",
-                  onChange: (e) => {
-                    setValue('bookedDate', e.target.value);
-                  }
-                })}
-              />
-            </div>
-            {errors.bookersDate && <span style={styles.errorText}>{errors.bookersDate.message}</span>}
-          </div>
-
-          <div style={styles.field}>
-            <label className="form-label" htmlFor="bookedDate" style={labelStyle}>Booked Date *</label>
-            <div style={styles.inputWrapper}>
-              <input
-                id="bookedDate"
-                type="date"
-                className="form-input"
-                {...register('bookedDate', { required: 'Booked Date is required' })}
-              />
-            </div>
-            {errors.bookedDate && <span style={styles.errorText}>{errors.bookedDate.message}</span>}
-          </div>
+        {/* Interactive Availability Calendar */}
+        <div style={styles.field}>
+          <label className="form-label" style={labelStyle}>Select Darshan Date *</label>
+          <AvailabilityCalendar 
+            mode="single"
+            selectedDate={selectedDateVal}
+            onChangeSelectedDate={(date) => {
+              setSelectedDateVal(date);
+              setValue('bookersDate', date, { shouldValidate: true });
+              setValue('bookedDate', date, { shouldValidate: true });
+            }}
+            availableDates={enabledDates}
+          />
+          {/* Hidden inputs to preserve standard react-hook-form bindings */}
+          <input type="hidden" {...register('bookersDate', { required: 'Booking Date is required' })} />
+          <input type="hidden" {...register('bookedDate', { required: 'Booking Date is required' })} />
+          {errors.bookersDate && <span style={styles.errorText}>{errors.bookersDate.message}</span>}
         </div>
 
-        {/* Time Selection Slot */}
+        {/* Display chosen Date details */}
+        {selectedDateVal && (
+          <div style={styles.selectedDateBadge}>
+            <CalIcon size={14} style={{ marginRight: '6px', color: '#00a884' }} />
+            <span>Selected Date: <strong>{new Date(selectedDateVal).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+          </div>
+        )}
+
+        {/* Time Selection Slot with availability filters */}
         <div style={styles.field}>
           <label className="form-label" htmlFor="timeSlot" style={labelStyle}>Time Selection Slots *</label>
           <div style={styles.inputWrapper}>
             <Clock size={16} style={styles.inputIcon} />
-            <select
-              id="timeSlot"
-              className="form-select"
-              style={{ paddingLeft: '38px' }}
-              {...register('timeSlot')}
-            >
-              <option value="06:00 AM - 07:00 AM">06:00 AM - 07:00 AM</option>
-              <option value="07:00 AM - 08:00 AM">07:00 AM - 08:00 AM</option>
-              <option value="08:00 AM - 09:00 AM">08:00 AM - 09:00 AM</option>
-              <option value="09:00 AM - 10:00 AM">09:00 AM - 10:00 AM</option>
-            </select>
+            
+            {!selectedDateVal ? (
+              <div style={styles.slotWarning}>
+                Please select an available date on the calendar above.
+              </div>
+            ) : availableSlots.length === 0 ? (
+              <div style={{ ...styles.slotWarning, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+                ⚠️ No Time Slots Available
+              </div>
+            ) : (
+              <select
+                id="timeSlot"
+                className="form-select"
+                style={{ paddingLeft: '38px' }}
+                {...register('timeSlot', { required: 'Time slot selection is required' })}
+              >
+                {availableSlots.map((s: any) => (
+                  <option key={s._id || s.time} value={s.time}>{s.time}</option>
+                ))}
+              </select>
+            )}
           </div>
+          {errors.timeSlot && <span style={styles.errorText}>{errors.timeSlot.message}</span>}
         </div>
 
         {initialData && (
@@ -311,6 +345,27 @@ const styles: { [key: string]: React.CSSProperties } = {
     paddingTop: '16px',
     borderTop: '1px solid rgba(134, 150, 160, 0.15)',
   },
+  selectedDateBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 168, 132, 0.06)',
+    border: '1px solid rgba(0, 168, 132, 0.15)',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    color: '#00a884',
+    marginTop: '8px'
+  },
+  slotWarning: {
+    width: '100%',
+    backgroundColor: '#202c33',
+    border: '1px solid rgba(134, 150, 160, 0.15)',
+    padding: '10px 14px',
+    borderRadius: '6px',
+    fontSize: '0.88rem',
+    color: '#8696a0',
+    textAlign: 'center'
+  }
 };
 
 export default BookingForm;

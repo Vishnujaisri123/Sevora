@@ -40,6 +40,7 @@ const EmployeeDashboard: React.FC = () => {
   
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
+  const [activeAvailability, setActiveAvailability] = useState<any[]>([]);
 
   // Fetch Tickets
   const fetchTickets = async () => {
@@ -62,10 +63,20 @@ const EmployeeDashboard: React.FC = () => {
     }
   };
 
+  // Fetch Active Availability
+  const fetchActiveAvailability = async () => {
+    try {
+      const res = await axios.get('/api/availability/active');
+      setActiveAvailability(res.data.availability || []);
+    } catch (err) {
+      console.error('Error fetching active availability:', err);
+    }
+  };
+
   useEffect(() => {
     const initData = async () => {
       setLoading(true);
-      await Promise.all([fetchTickets(), fetchNotifications()]);
+      await Promise.all([fetchTickets(), fetchNotifications(), fetchActiveAvailability()]);
       setLoading(false);
     };
     initData();
@@ -105,6 +116,10 @@ const EmployeeDashboard: React.FC = () => {
           setSelectedTicket(null);
         }
       });
+
+      socket.on('availability_updated', () => {
+        fetchActiveAvailability();
+      });
     }
 
     // Request browser notification permissions on mount
@@ -120,6 +135,7 @@ const EmployeeDashboard: React.FC = () => {
         socket.off('ticket_status_updated');
         socket.off('ticket_pdf_uploaded');
         socket.off('ticket_deleted');
+        socket.off('availability_updated');
       }
     };
   }, [socket, user, selectedTicket]);
@@ -557,6 +573,7 @@ const EmployeeDashboard: React.FC = () => {
                   }
                 }}
                 isLoading={formLoading}
+                activeAvailability={activeAvailability}
               />
             </motion.div>
           </div>

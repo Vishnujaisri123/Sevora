@@ -9,9 +9,10 @@ import {
   Search, Filter, Calendar, Users, Shield, Clock, FileText, 
   Upload, Download, Plus, RefreshCw, BarChart2, Check, DownloadCloud,
   CheckCheck, MessageSquare, AlertCircle, X, ChevronRight, FileUp,
-  Trash2
+  Trash2, Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AvailabilityCalendar } from '../components/AvailabilityCalendar';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -47,6 +48,122 @@ const AdminDashboard: React.FC = () => {
   const [newStatus, setNewStatus] = useState('');
   const [statusComment, setStatusComment] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
+
+  // Availability states
+  const [showAvailability, setShowAvailability] = useState(false);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [availabilityData, setAvailabilityData] = useState<any[]>([]);
+  const [slotsForSelectedDates, setSlotsForSelectedDates] = useState<{ [dateString: string]: Array<{ time: string, active: boolean }> }>({});
+  const [customSlotTexts, setCustomSlotTexts] = useState<{ [dateString: string]: string }>({});
+
+  // Fetch Availability Configurations
+  const fetchAvailability = async () => {
+    try {
+      const res = await axios.get('/api/availability');
+      setAvailabilityData(res.data.availability || []);
+    } catch (err) {
+      console.error('Error fetching availability:', err);
+    }
+  };
+
+  // Sync slots for selected dates
+  useEffect(() => {
+    const updatedSlots = { ...slotsForSelectedDates };
+    const DEFAULT_SLOTS = [
+      { time: '06:00 AM - 07:00 AM', active: true },
+      { time: '07:00 AM - 08:00 AM', active: true },
+      { time: '08:00 AM - 09:00 AM', active: true },
+      { time: '09:00 AM - 10:00 AM', active: true }
+    ];
+
+    selectedDates.forEach(date => {
+      if (!updatedSlots[date]) {
+        const existing = availabilityData.find(a => a.dateString === date);
+        if (existing) {
+          updatedSlots[date] = existing.slots.map((s: any) => ({ time: s.time, active: s.active }));
+        } else {
+          updatedSlots[date] = DEFAULT_SLOTS.map(s => ({ ...s }));
+        }
+      }
+    });
+
+    Object.keys(updatedSlots).forEach(key => {
+      if (!selectedDates.includes(key)) {
+        delete updatedSlots[key];
+      }
+    });
+
+    setSlotsForSelectedDates(updatedSlots);
+  }, [selectedDates, availabilityData]);
+
+  // Batch Save availability
+  const handleSaveAvailability = async () => {
+    if (selectedDates.length === 0) return;
+    const configs = selectedDates.map(date => ({
+      dateString: date,
+      slots: slotsForSelectedDates[date] || []
+    }));
+
+    try {
+      await axios.post('/api/availability/save', { configs });
+      showToast('Availability configurations saved successfully', 'success', 'Availability Saved');
+      await fetchAvailability();
+      setSelectedDates([]);
+    } catch (err) {
+      console.error('Error saving availability:', err);
+      showToast('Failed to save availability', 'error', 'Error');
+    }
+  };
+
+  // Delete/Clear single date availability configuration
+  const handleClearAvailability = async (dateString: string) => {
+    if (!window.confirm(`Are you sure you want to clear availability for ${dateString}?`)) return;
+    try {
+      await axios.delete(`/api/availability/${dateString}`);
+      showToast(`Cleared availability for ${dateString}`, 'info', 'Availability Cleared');
+      await fetchAvailability();
+      setSelectedDates(prev => prev.filter(d => d !== dateString));
+    } catch (err) {
+      console.error('Error deleting availability:', err);
+      showToast('Failed to clear availability', 'error', 'Error');
+    }
+  };
+
+  // Toggle slot active state in edit
+  const toggleSlotActive = (date: string, index: number) => {
+    const updated = [...(slotsForSelectedDates[date] || [])];
+    updated[index].active = !updated[index].active;
+    setSlotsForSelectedDates(prev => ({ ...prev, [date]: updated }));
+  };
+
+  // Remove slot option in edit
+  const removeSlotOption = (date: string, index: number) => {
+    const updated = [...(slotsForSelectedDates[date] || [])];
+    updated.splice(index, 1);
+    setSlotsForSelectedDates(prev => ({ ...prev, [date]: updated }));
+  };
+
+  // Add custom slot in edit
+  const addCustomSlot = (date: string) => {
+    const text = customSlotTexts[date] || '';
+    if (!text.trim()) return;
+    const updated = [...(slotsForSelectedDates[date] || [])];
+    if (updated.some(s => s.time === text.trim())) return;
+    updated.push({ time: text.trim(), active: true });
+    setSlotsForSelectedDates(prev => ({ ...prev, [date]: updated }));
+    setCustomSlotTexts(prev => ({ ...prev, [date]: '' }));
+  };
+
+  // Duplicate slots configuration to all other selected dates
+  const duplicateConfigToAll = (sourceDate: string) => {
+    const sourceSlots = slotsForSelectedDates[sourceDate] || [];
+    const updated = { ...slotsForSelectedDates };
+    selectedDates.forEach(date => {
+      updated[date] = sourceSlots.map(s => ({ ...s }));
+    });
+    setSlotsForSelectedDates(updated);
+    showToast('Duplicated slots configuration to all selected dates', 'success', 'Slots Copied');
+  };
 
   // File upload inputs
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -111,6 +228,7 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     fetchTickets();
     fetchNotifications();
+    fetchAvailability();
   }, []);
 
   useEffect(() => {
@@ -161,6 +279,10 @@ const AdminDashboard: React.FC = () => {
           setTicketDetails(null);
         }
       });
+
+      socket.on('availability_updated', () => {
+        fetchAvailability();
+      });
     }
 
     return () => {
@@ -170,6 +292,7 @@ const AdminDashboard: React.FC = () => {
         socket.off('ticket_pdf_uploaded');
         socket.off('message_received');
         socket.off('ticket_deleted');
+        socket.off('availability_updated');
       }
     };
   }, [socket, selectedTicket, user]);
@@ -245,6 +368,7 @@ const AdminDashboard: React.FC = () => {
     if (target) {
       setSelectedTicket(target);
       setShowAnalytics(false);
+      setShowAvailability(false);
     }
   };
 
@@ -358,12 +482,32 @@ const AdminDashboard: React.FC = () => {
             LEFT SIDEBAR (WhatsApp Conversations List)
             ========================================== */}
         <div className="whatsapp-sidebar">
+          {/* Admin Desk Header and Availability Menu Item */}
+          <div style={styles.deskHeader}>
+            <h4 style={styles.deskTitle}>Admin Portal – Temple Bookings Desk</h4>
+            <button
+              onClick={() => {
+                setShowAvailability(true);
+                setShowAnalytics(false);
+                setSelectedTicket(null);
+              }}
+              style={{
+                ...styles.deskMenuBtn,
+                backgroundColor: showAvailability ? 'rgba(0, 168, 132, 0.12)' : 'transparent',
+                borderColor: showAvailability ? '#00a884' : 'rgba(134, 150, 160, 0.15)',
+                color: showAvailability ? '#00a884' : '#e9edef'
+              }}
+            >
+              📅 Temple Availability
+            </button>
+          </div>
+
           {/* Sidebar Header controls */}
           <div style={styles.sidebarHeader}>
             <div style={styles.sidebarActions}>
               <h3 style={styles.sidebarTitle}>Conversations</h3>
               <button 
-                onClick={() => setShowAnalytics(!showAnalytics)} 
+                onClick={() => { setShowAnalytics(!showAnalytics); setShowAvailability(false); setSelectedTicket(null); }} 
                 style={{
                   ...styles.sidebarActionBtn,
                   color: showAnalytics ? 'var(--accent-hover)' : '#aebac1'
@@ -393,7 +537,7 @@ const AdminDashboard: React.FC = () => {
             {['All', 'Waiting for Admin', 'Processing', 'Ticket Generated', 'Completed', 'Draft', 'Cancelled'].map((f) => (
               <button
                 key={f}
-                onClick={() => { setStatusFilter(f); setShowAnalytics(false); }}
+                onClick={() => { setStatusFilter(f); setShowAnalytics(false); setShowAvailability(false); }}
                 style={{
                   ...styles.filterTab,
                   backgroundColor: statusFilter === f ? 'var(--accent-light)' : 'transparent',
@@ -420,7 +564,7 @@ const AdminDashboard: React.FC = () => {
                 return (
                   <div
                     key={ticket._id}
-                    onClick={() => { setSelectedTicket(ticket); setShowAnalytics(false); }}
+                    onClick={() => { setSelectedTicket(ticket); setShowAnalytics(false); setShowAvailability(false); }}
                     style={{
                       ...styles.convoItem,
                       backgroundColor: isActive ? '#2a3942' : 'transparent',
@@ -571,6 +715,159 @@ const AdminDashboard: React.FC = () => {
                             </div>
                             <div style={styles.barContainer}>
                               <div style={{ ...styles.barFill, width: `${percentage}%`, backgroundColor: '#a78bfa' }} />
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : showAvailability ? (
+            /* TEMPLE AVAILABILITY MANAGEMENT PANEL */
+            <div style={styles.availabilityPanel}>
+              <div style={styles.analyticsHeader}>
+                <div>
+                  <h2 style={styles.analyticsTitle}>Temple Availability Management</h2>
+                  <p style={{ color: '#8696a0', fontSize: '0.88rem', marginTop: '4px' }}>
+                    Configure booking dates and time slots for employees.
+                  </p>
+                </div>
+                <button onClick={() => setShowAvailability(false)} style={styles.closeAnalyticsBtn}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div style={styles.availabilityGrid}>
+                {/* Left Side: Calendar picker */}
+                <div style={styles.calendarCol}>
+                  <h3 style={styles.sectionHeading}>1. Select Booking Dates</h3>
+                  <AvailabilityCalendar 
+                    mode="multi"
+                    selectedDates={selectedDates}
+                    onChangeSelectedDates={setSelectedDates}
+                    configuredDates={availabilityData.map(a => a.dateString)}
+                  />
+                </div>
+
+                {/* Right Side: Slots config panel */}
+                <div style={styles.slotsCol}>
+                  <div style={styles.slotsColHeader}>
+                    <h3 style={styles.sectionHeading}>2. Assign Time Slots</h3>
+                    {selectedDates.length > 0 && (
+                      <button 
+                        onClick={handleSaveAvailability}
+                        className="btn-primary"
+                        style={{ padding: '8px 18px', fontSize: '0.88rem' }}
+                      >
+                        Save Configurations
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={styles.selectedDatesList}>
+                    {selectedDates.length === 0 ? (
+                      <div style={styles.emptySlotsPrompt}>
+                        <Calendar size={48} style={{ color: '#3b4a54', marginBottom: '12px' }} />
+                        <p>No dates selected on the calendar.</p>
+                        <span>Click one or more dates to start assigning slots.</span>
+                      </div>
+                    ) : (
+                      selectedDates.map(date => {
+                        const slots = slotsForSelectedDates[date] || [];
+                        const customText = customSlotTexts[date] || '';
+                        const dbConfig = availabilityData.find(a => a.dateString === date);
+                        
+                        return (
+                          <div key={date} className="glass-panel" style={styles.dateConfigCard}>
+                            <div style={styles.dateCardHeader}>
+                              <div style={styles.dateCardTitle}>
+                                <h4 style={styles.dateText}>
+                                  {new Date(date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                </h4>
+                                {dbConfig && (
+                                  <span style={styles.dbConfigBadge}>Active Config</span>
+                                )}
+                              </div>
+
+                              <div style={styles.dateCardActions}>
+                                <button 
+                                  onClick={() => duplicateConfigToAll(date)}
+                                  style={styles.cardActionBtn}
+                                  title="Duplicate this configuration to all other selected dates"
+                                >
+                                  <Copy size={14} style={{ marginRight: '4px' }} /> Copy to All
+                                </button>
+                                {dbConfig && (
+                                  <button 
+                                    onClick={() => handleClearAvailability(date)}
+                                    style={{ ...styles.cardActionBtn, color: '#ef4444' }}
+                                    title="Delete/Clear configuration from Database"
+                                  >
+                                    <Trash2 size={14} /> Clear
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* List of slots with toggle active & remove option */}
+                            <div style={styles.slotsGridList}>
+                              {slots.length === 0 ? (
+                                <p style={styles.noSlotsText}>No slots defined. Add one below.</p>
+                              ) : (
+                                slots.map((s, idx) => (
+                                  <div key={idx} style={styles.slotOptionRow}>
+                                    <label style={styles.slotCheckboxLabel}>
+                                      <input 
+                                        type="checkbox"
+                                        checked={s.active}
+                                        onChange={() => toggleSlotActive(date, idx)}
+                                        style={styles.slotCheckbox}
+                                      />
+                                      <span style={{ 
+                                        fontSize: '0.85rem', 
+                                        color: s.active ? '#e9edef' : '#8696a0',
+                                        textDecoration: s.active ? 'none' : 'line-through'
+                                      }}>
+                                        {s.time}
+                                      </span>
+                                    </label>
+                                    <button 
+                                      onClick={() => removeSlotOption(date, idx)}
+                                      style={styles.removeSlotBtn}
+                                      title="Remove slot option"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+
+                            {/* Add custom slot field */}
+                            <div style={styles.addSlotWrapper}>
+                              <input 
+                                type="text"
+                                className="form-input"
+                                placeholder="e.g. 10:00 AM - 11:00 AM"
+                                value={customText}
+                                onChange={(e) => setCustomSlotTexts(prev => ({ ...prev, [date]: e.target.value }))}
+                                style={styles.addSlotInput}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    addCustomSlot(date);
+                                  }
+                                }}
+                              />
+                              <button 
+                                onClick={() => addCustomSlot(date)}
+                                className="btn-secondary"
+                                style={styles.addSlotBtn}
+                              >
+                                + Add
+                              </button>
                             </div>
                           </div>
                         );
@@ -942,6 +1239,7 @@ const AdminDashboard: React.FC = () => {
                   if (matchedTicket) {
                     setSelectedTicket(matchedTicket);
                     setShowAnalytics(false);
+                    setShowAvailability(false);
                   }
                 }
                 setToasts(prev => prev.filter(t => t.id !== toast.id));
@@ -1501,6 +1799,201 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: '100%',
     borderRadius: '3px',
   },
+  deskHeader: {
+    padding: '16px',
+    borderBottom: '1px solid rgba(134, 150, 160, 0.15)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    backgroundColor: '#0b141a',
+  },
+  deskTitle: {
+    fontSize: '0.85rem',
+    fontWeight: '700',
+    color: '#8696a0',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  deskMenuBtn: {
+    width: '100%',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    border: '1px solid rgba(134, 150, 160, 0.15)',
+    fontSize: '0.88rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    transition: 'all 0.2s ease',
+    outline: 'none',
+  },
+  availabilityPanel: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    padding: '24px',
+    overflowY: 'auto',
+    backgroundColor: '#0b141a',
+  },
+  availabilityGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '24px',
+    alignItems: 'start'
+  },
+  calendarCol: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  slotsCol: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  slotsColHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: '38px'
+  },
+  sectionHeading: {
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: '#e9edef',
+    margin: 0
+  },
+  selectedDatesList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    maxHeight: 'calc(100vh - 220px)',
+    overflowY: 'auto',
+    paddingRight: '4px'
+  },
+  emptySlotsPrompt: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '48px 16px',
+    backgroundColor: 'rgba(17, 27, 33, 0.3)',
+    borderRadius: '12px',
+    border: '1px dashed rgba(134, 150, 160, 0.15)',
+    color: '#8696a0',
+    textAlign: 'center'
+  },
+  dateConfigCard: {
+    padding: '16px',
+    backgroundColor: '#111b21',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '10px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  dateCardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottom: '1px solid rgba(134, 150, 160, 0.1)',
+    paddingBottom: '8px'
+  },
+  dateCardTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  dateText: {
+    fontSize: '0.94rem',
+    fontWeight: '600',
+    color: '#e9edef',
+    margin: 0
+  },
+  dbConfigBadge: {
+    fontSize: '0.68rem',
+    backgroundColor: 'rgba(0, 168, 132, 0.12)',
+    color: '#00a884',
+    padding: '2px 8px',
+    borderRadius: '8px',
+    fontWeight: '600'
+  },
+  dateCardActions: {
+    display: 'flex',
+    gap: '8px'
+  },
+  cardActionBtn: {
+    background: 'none',
+    border: 'none',
+    fontSize: '0.78rem',
+    color: '#8696a0',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    transition: 'color 0.2s',
+    padding: '2px 6px',
+    borderRadius: '4px'
+  },
+  slotsGridList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    backgroundColor: 'rgba(17, 27, 33, 0.5)',
+    padding: '10px',
+    borderRadius: '8px',
+    maxHeight: '160px',
+    overflowY: 'auto'
+  },
+  slotOptionRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '4px 8px',
+    backgroundColor: '#202c33',
+    borderRadius: '6px'
+  },
+  slotCheckboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    cursor: 'pointer',
+    userSelect: 'none' as const
+  },
+  slotCheckbox: {
+    cursor: 'pointer',
+    accentColor: '#00a884'
+  },
+  removeSlotBtn: {
+    background: 'none',
+    border: 'none',
+    color: '#ef4444',
+    cursor: 'pointer',
+    opacity: 0.7,
+    display: 'flex',
+    alignItems: 'center',
+    padding: '2px',
+    transition: 'opacity 0.2s'
+  },
+  noSlotsText: {
+    fontSize: '0.8rem',
+    color: '#8696a0',
+    textAlign: 'center',
+    margin: '8px 0'
+  },
+  addSlotWrapper: {
+    display: 'flex',
+    gap: '8px'
+  },
+  addSlotInput: {
+    flex: 1,
+    padding: '6px 12px',
+    fontSize: '0.85rem'
+  },
+  addSlotBtn: {
+    padding: '6px 14px',
+    fontSize: '0.82rem'
+  }
 };
 
 export default AdminDashboard;
