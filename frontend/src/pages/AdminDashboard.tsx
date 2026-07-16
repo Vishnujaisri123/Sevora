@@ -73,15 +73,7 @@ const AdminDashboard: React.FC = () => {
       { time: '06:00 AM - 07:00 AM', active: true },
       { time: '07:00 AM - 08:00 AM', active: true },
       { time: '08:00 AM - 09:00 AM', active: true },
-      { time: '09:00 AM - 10:00 AM', active: true },
-      { time: '10:00 AM - 11:00 AM', active: true },
-      { time: '11:00 AM - 12:00 PM', active: true },
-      { time: '12:00 PM - 01:00 PM', active: true },
-      { time: '04:00 PM - 05:00 PM', active: true },
-      { time: '05:00 PM - 06:00 PM', active: true },
-      { time: '06:00 PM - 07:00 PM', active: true },
-      { time: '07:00 PM - 08:00 PM', active: true },
-      { time: '08:00 PM - 09:00 PM', active: true }
+      { time: '09:00 AM - 10:00 AM', active: true }
     ];
 
     selectedDates.forEach(date => {
