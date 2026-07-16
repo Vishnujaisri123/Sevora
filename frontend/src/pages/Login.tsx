@@ -105,16 +105,7 @@ const Login: React.FC = () => {
     }
   };
 
-  // Helper to quickly fill credentials for grading/testing convenience
-  const fillCredentials = (role: 'admin' | 'employee') => {
-    if (role === 'admin') {
-      setUsername('vishnuketa999@gmail.com');
-      setPassword('Vishnuketa@123');
-    } else {
-      setUsername('employee');
-      setPassword('employee123');
-    }
-  };
+
 
   return (
     <div style={styles.container}>
@@ -406,30 +397,7 @@ const Login: React.FC = () => {
               </button>
             </div>
 
-            {/* Quick Testing helper panel */}
-            {!isSignUp && (
-              <div style={styles.helperPanel}>
-                <p style={styles.helperTitle}>Quick Access for Testing:</p>
-                <div style={styles.helperBtnContainer}>
-                  <button 
-                    type="button" 
-                    onClick={() => fillCredentials('employee')} 
-                    style={styles.helperBtn}
-                    className="btn-secondary"
-                  >
-                    <User size={14} /> Employee
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => fillCredentials('admin')} 
-                    style={styles.helperBtn}
-                    className="btn-secondary"
-                  >
-                    <Shield size={14} /> Admin
-                  </button>
-                </div>
-              </div>
-            )}
+
           </>
         )}
       </div>
