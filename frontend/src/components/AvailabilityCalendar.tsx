@@ -157,7 +157,9 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
       }
 
       // Generate Tooltip Text
-      const tooltipText = `${teluguInfo.month} Masam | ${teluguInfo.paksha} Paksha | ${teluguInfo.tithi}`;
+      const tooltipText = mode === 'single'
+        ? `${teluguInfo.month} Masam | ${teluguInfo.paksha} Paksha | ${teluguInfo.tithi}`
+        : `${targetDate.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
 
       dayCells.push(
         <div 
@@ -189,12 +191,12 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           )}
 
           {/* Lunar Event Highlights */}
-          {teluguInfo.isPournami && (
+          {mode === 'single' && teluguInfo.isPournami && (
             <div style={styles.moonIconWrapper} title="Pournami (Full Moon)">
               <span style={styles.brightWhiteFullMoon} />
             </div>
           )}
-          {teluguInfo.isAmavasya && (
+          {mode === 'single' && teluguInfo.isAmavasya && (
             <div style={styles.moonIconWrapper} title="Amavasya (New Moon)">
               <span style={styles.blackMoonWhiteOutline} />
             </div>
@@ -262,10 +264,12 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
       </div>
 
       {/* Telugu Month Heading display */}
-      <div style={styles.teluguMonthLabel}>
-        <CalIcon size={14} style={{ marginRight: '6px', color: 'var(--accent-color)' }} />
-        <span>Telugu Month: <strong>{getTeluguMonthsHeader()}</strong></span>
-      </div>
+      {mode === 'single' && (
+        <div style={styles.teluguMonthLabel}>
+          <CalIcon size={14} style={{ marginRight: '6px', color: 'var(--accent-color)' }} />
+          <span>Telugu Month: <strong>{getTeluguMonthsHeader()}</strong></span>
+        </div>
+      )}
 
       {/* Days of Week label row */}
       <div style={styles.daysOfWeekGrid}>
@@ -280,25 +284,24 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
       </div>
 
       {/* Hover Info bar */}
-      <div style={styles.footerInfo}>
-        {hoveredDateInfo ? (
-          <div style={styles.hoverInfo}>
-            <span style={{ fontSize: '1.2rem', marginRight: '6px' }}>
-              {hoveredDateInfo.info.isPournami ? '🌕' : hoveredDateInfo.info.isAmavasya ? '🌑' : '🌙'}
-            </span>
-            <span style={styles.hoverText}>
-              {hoveredDateInfo.info.month} Masam — {hoveredDateInfo.info.paksha} Paksha {hoveredDateInfo.info.tithi}
-            </span>
-          </div>
-        ) : (
-          <div style={styles.footerGuide}>
-            {mode === 'single' 
-              ? 'Select an enabled date (light green border) to view time slots.' 
-              : 'Click multiple dates to select and configure time slots.'
-            }
-          </div>
-        )}
-      </div>
+      {mode === 'single' && (
+        <div style={styles.footerInfo}>
+          {hoveredDateInfo ? (
+            <div style={styles.hoverInfo}>
+              <span style={{ fontSize: '1.2rem', marginRight: '6px' }}>
+                {hoveredDateInfo.info.isPournami ? '🌕' : hoveredDateInfo.info.isAmavasya ? '🌑' : '🌙'}
+              </span>
+              <span style={styles.hoverText}>
+                {hoveredDateInfo.info.month} Masam — {hoveredDateInfo.info.paksha} Paksha {hoveredDateInfo.info.tithi}
+              </span>
+            </div>
+          ) : (
+            <div style={styles.footerGuide}>
+              Select an enabled date (light green border) to view time slots.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

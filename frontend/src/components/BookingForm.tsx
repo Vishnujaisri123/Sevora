@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { X, User, Phone, Clock, Trash2, Calendar as CalIcon } from 'lucide-react';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
-import { getTeluguDateInfo } from '../utils/teluguCalendar';
 
 interface BookingFormData {
   clientName1: string;
@@ -48,9 +47,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [selectedDateVal, setSelectedDateVal] = useState<string>('');
   const [showCalendarPicker, setShowCalendarPicker] = useState<boolean>(false);
 
-  // Calculate Telugu details for selected date
-  const selectedTeluguInfo = selectedDateVal ? getTeluguDateInfo(new Date(selectedDateVal)) : null;
-  const selectedDayName = selectedDateVal ? new Date(selectedDateVal).toLocaleDateString([], { weekday: 'long' }) : '';
+
 
   useEffect(() => {
     if (initialData) {
@@ -234,59 +231,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           {errors.bookersDate && <span style={styles.errorText}>{errors.bookersDate.message}</span>}
         </div>
 
-        {/* Display chosen Date Telugu details */}
-        {selectedDateVal && selectedTeluguInfo && (
-          <div style={styles.selectedDateDetails}>
-            <div style={styles.detailTitle}>
-              <span style={{ fontSize: '18px' }}>📜</span>
-              <span style={{ fontWeight: '700', color: '#e9edef' }}>Telugu Calendar Details</span>
-            </div>
-            <div style={styles.detailGrid}>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Day Name:</span>
-                <span style={styles.detailVal}>{selectedDayName}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Telugu Month:</span>
-                <span style={styles.detailVal}>{selectedTeluguInfo.month} Masam</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Tithi (Lunar Date):</span>
-                <span style={styles.detailVal}>{selectedTeluguInfo.tithi} ({selectedTeluguInfo.paksha} Paksha)</span>
-              </div>
-              {(selectedTeluguInfo.isPournami || selectedTeluguInfo.isAmavasya) && (
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Lunar Event:</span>
-                  <span style={{ ...styles.detailVal, color: '#e9b10a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {selectedTeluguInfo.isPournami ? (
-                      <>
-                        <span style={{
-                          width: '9px',
-                          height: '9px',
-                          borderRadius: '50%',
-                          backgroundColor: '#ffffff',
-                          boxShadow: '0 0 5px #ffffff, 0 0 8px #ffffff',
-                          display: 'inline-block'
-                        }} /> Pournami (Full Moon)
-                      </>
-                    ) : (
-                      <>
-                        <span style={{
-                          width: '7px',
-                          height: '7px',
-                          borderRadius: '50%',
-                          backgroundColor: '#000000',
-                          border: '1.5px solid #ffffff',
-                          display: 'inline-block'
-                        }} /> Amavasya (New Moon)
-                      </>
-                    )}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+
 
         {/* Time Selection Slot with availability filters */}
         <div style={styles.field}>
