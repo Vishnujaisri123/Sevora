@@ -101,15 +101,24 @@ const seedAdmin = async () => {
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/temple_tickets';
 
-mongoose.connect(MONGODB_URI)
-  .then(async () => {
+const connectDB = async () => {
+  try {
+    await mongoose.connect(MONGODB_URI);
     console.log('Successfully connected to MongoDB.');
-    await seedAdmin();
-    server.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('Database connection failed:', err);
-    process.exit(1);
+  } catch (err) {
+    console.warn('Failed to connect to primary MONGODB_URI. Falling back to local MongoDB...', err.message);
+    try {
+      await mongoose.connect('mongodb://127.0.0.1:27017/temple_tickets');
+      console.log('Successfully connected to local fallback MongoDB.');
+    } catch (fallbackErr) {
+      console.error('Fallback local MongoDB connection also failed:', fallbackErr);
+      process.exit(1);
+    }
+  }
+  await seedAdmin();
+  server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
   });
+};
+
+connectDB();
