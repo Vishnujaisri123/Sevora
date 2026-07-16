@@ -47,6 +47,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [selectedDateVal, setSelectedDateVal] = useState<string>('');
   const [showCalendarPicker, setShowCalendarPicker] = useState<boolean>(false);
 
+  const getFormattedDateDisplay = (dateString: string) => {
+    if (!dateString) return 'Click to select booking date';
+    const d = new Date(dateString);
+    const dateNum = d.getDate();
+    const monthName = d.toLocaleDateString([], { month: 'long' });
+    const dayOfWeek = d.toLocaleDateString([], { weekday: 'long' });
+    const yearNum = d.getFullYear();
+    return `${dateNum} ${monthName}, ${dayOfWeek}, ${yearNum}`;
+  };
+
 
 
   useEffect(() => {
@@ -201,7 +211,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   readOnly
                   className="form-input"
                   style={{ paddingLeft: '38px', cursor: 'pointer' }}
-                  value={selectedDateVal ? `${new Date(selectedDateVal).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}` : 'Click to select booking date'}
+                  value={getFormattedDateDisplay(selectedDateVal)}
                   placeholder="Click to select booking date"
                 />
               </div>
@@ -380,13 +390,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer'
   },
   calendarDropdownContainer: {
-    marginTop: '8px',
-    backgroundColor: '#111b21',
-    border: '1px solid rgba(134, 150, 160, 0.2)',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-    overflow: 'hidden',
-    zIndex: 10
+    marginTop: '12px',
+    width: '100%'
   },
   noDatesAlert: {
     width: '100%',
@@ -398,47 +403,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#ef4444',
     textAlign: 'center',
     fontWeight: '500'
-  },
-  selectedDateDetails: {
-    backgroundColor: 'rgba(0, 168, 132, 0.04)',
-    border: '1px solid rgba(0, 168, 132, 0.12)',
-    borderRadius: '8px',
-    padding: '12px 14px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    marginTop: '6px'
-  },
-  detailTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '0.9rem',
-    fontWeight: '700',
-    color: '#e9edef',
-    borderBottom: '1px solid rgba(0, 168, 132, 0.1)',
-    paddingBottom: '6px'
-  },
-  detailGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '8px 16px'
-  },
-  detailItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px'
-  },
-  detailLabel: {
-    fontSize: '0.72rem',
-    color: '#8696a0',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-  },
-  detailVal: {
-    fontSize: '0.85rem',
-    color: '#e9edef',
-    fontWeight: '600'
   },
   slotWarning: {
     width: '100%',
