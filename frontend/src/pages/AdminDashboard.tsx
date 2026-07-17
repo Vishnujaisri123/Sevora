@@ -705,8 +705,15 @@ ticket Number : #${data.serialNumber}`,
                   <h3 style={{ ...styles.statValue, color: '#00bcd4' }}>₹{stats.completed * 200}</h3>
                 </div>
                 <div className="glass-panel" style={styles.statBox}>
-                  <span style={styles.statLabel}>Profit</span>
-                  <h3 style={{ ...styles.statValue, color: '#ec407a' }}>₹{stats.completed * 50}</h3>
+                  <span style={styles.statLabel}>Profit Breakdown</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '6px' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#e9edef', fontWeight: '500' }}>
+                      Owner: <span style={{ color: '#ec407a', fontWeight: 'bold' }}>₹{stats.completed * 50}</span>
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: '#e9edef', fontWeight: '500' }}>
+                      Doing: <span style={{ color: '#818cf8', fontWeight: 'bold' }}>₹{stats.completed * 20}</span>
+                    </span>
+                  </div>
                 </div>
                 <div className="glass-panel" style={styles.statBox}>
                   <span style={styles.statLabel}>PhonePe Payments</span>

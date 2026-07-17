@@ -340,8 +340,15 @@ const EmployeeDashboard: React.FC = () => {
               <TrendingUp size={22} style={{ color: '#ec407a' }} />
             </div>
             <div style={styles.metricInfo}>
-              <span style={styles.metricLabel}>Profit</span>
-              <h2 style={styles.metricValue}>₹{metrics.completed * 50}</h2>
+              <span style={styles.metricLabel}>Profit Breakdown</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+                <span style={{ fontSize: '0.85rem', color: '#e9edef', fontWeight: '500' }}>
+                  Owner: <span style={{ color: '#ec407a', fontWeight: 'bold' }}>₹{metrics.completed * 50}</span>
+                </span>
+                <span style={{ fontSize: '0.85rem', color: '#e9edef', fontWeight: '500' }}>
+                  Doing: <span style={{ color: '#818cf8', fontWeight: 'bold' }}>₹{metrics.completed * 20}</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
