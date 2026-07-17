@@ -98,6 +98,29 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       }
     };
 
+    const pollNewMessages = async () => {
+      try {
+        const res = await axios.get(`/api/messages/${ticketId}?limit=50`);
+        setMessages(prev => {
+          const merged = [...prev];
+          let addedAny = false;
+          res.data.forEach((newMsg: Message) => {
+            if (!merged.some(m => m._id === newMsg._id)) {
+              merged.push(newMsg);
+              addedAny = true;
+            }
+          });
+          if (addedAny) {
+            merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            setTimeout(scrollToBottom, 50);
+          }
+          return merged;
+        });
+      } catch (err) {
+        console.error('Error polling messages:', err);
+      }
+    };
+
     const fetchRecipientStatus = async () => {
       try {
         const res = await axios.get('/api/auth/users');
@@ -114,6 +137,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     fetchMessages();
     fetchRecipientStatus();
 
+    const intervalId = setInterval(() => {
+      pollNewMessages();
+      fetchRecipientStatus();
+    }, 10000);
+
     if (socket) {
       socket.emit('join_ticket', { ticketId });
 
@@ -125,11 +153,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             return [...prev, newMsg];
           });
           setTimeout(scrollToBottom, 50);
-
-          // Tell the socket server we've read it (triggers read receipt ticks)
-          if (user && newMsg.senderId && newMsg.senderId._id !== user.id) {
-            socket.emit('join_ticket', { ticketId }); // Triggers read update
-          }
         }
       });
 
@@ -137,14 +160,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         setMessages(prev => prev.map(m => m._id === updatedMsg._id ? updatedMsg : m));
       });
 
-      socket.on('messages_read', ({ ticketId: tId, messageIds }: any) => {
-        if (tId === ticketId) {
-          setMessages(prev => prev.map(m => {
-            if (messageIds.includes(m._id)) {
-              return { ...m, status: 'read' };
-            }
-            return m;
-          }));
+      socket.on('messages_read', ({ readerId }: any) => {
+        if (readerId === recipientId) {
+          setMessages(prev => prev.map(m => m.status !== 'read' ? { ...m, status: 'read' } : m));
         }
       });
 
@@ -169,6 +187,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     }
 
     return () => {
+      clearInterval(intervalId);
       if (socket) {
         socket.emit('leave_ticket', { ticketId });
         socket.off('message_received');

@@ -82,6 +82,15 @@ const EmployeeDashboard: React.FC = () => {
     initData();
   }, []);
 
+  // 10-second background polling fallback
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchTickets();
+      fetchNotifications();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (selectedTicket?._id && notifications.length > 0) {
       const ticketId = selectedTicket._id;

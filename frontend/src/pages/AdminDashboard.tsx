@@ -294,6 +294,18 @@ const AdminDashboard: React.FC = () => {
     }
   }, [selectedTicket]);
 
+  // 10-second background polling fallback
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchTickets();
+      fetchNotifications();
+      if (selectedTicket?._id) {
+        fetchActiveTicketDetails(selectedTicket._id);
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [selectedTicket?._id]);
+
   // Automatically update ticket status to "Processing" when opened by Admin
   useEffect(() => {
     if (selectedTicket && selectedTicket.status === 'Waiting for Admin') {
