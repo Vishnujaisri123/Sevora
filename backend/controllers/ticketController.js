@@ -414,11 +414,11 @@ exports.uploadPdf = async (req, res) => {
     };
 
     ticket.pdfHistory.push(newPdf);
-    ticket.status = 'Completed'; // Finalize status
+    ticket.status = 'Completed'; // Transition state
     ticket.adminId = req.user.id; // Assign to processing admin
     await ticket.save();
 
-    await logActivity(ticket._id, req.user.id, `Uploaded Ticket PDF (v${versionNumber}) and Completed Booking`, previousStatus, 'Completed', `File: ${req.file.originalname}`);
+    await logActivity(ticket._id, req.user.id, `Uploaded Ticket PDF (v${versionNumber})`, previousStatus, 'Completed', `File: ${req.file.originalname}`);
 
     // Notify employee
     const adminName = req.user.username;
