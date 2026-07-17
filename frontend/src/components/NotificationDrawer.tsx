@@ -91,8 +91,48 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     const { type, senderName, clientName, fileName, bodyText, isRead } = notif;
     const timeString = new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Fallback client name resolution
-    const resolvedClient = clientName || (notif.ticketId ? (notif.ticketId.clientName1 && notif.ticketId.clientName2 ? `${notif.ticketId.clientName1} & ${notif.ticketId.clientName2}` : notif.ticketId.clientName) : 'N/A');
+    // Helpers to clean up legacy notification messages
+    const cleanLegacyMessage = (msg: string) => {
+      if (!msg) return '';
+      // Check if it's the legacy pattern: ... sent a message regarding client ...: "..."
+      const match = msg.match(/sent a message regarding client.*:\s*"(.*)"$/s);
+      if (match) {
+        return match[1];
+      }
+      // Also check for legacy employee message format
+      if (msg.startsWith('message from employee')) {
+        return msg.replace(/^message from employee\s+\S+\s+/i, '');
+      }
+      // Also check for legacy file attachment pattern
+      if (msg.includes('sent a file attachment for client') || msg.includes('[File Attachment]')) {
+        return '[File Attachment]';
+      }
+      return msg;
+    };
+
+    const extractLegacySender = (msg: string) => {
+      if (!msg) return 'Sender';
+      const match = msg.match(/^(.*?)\s+sent a message/);
+      if (match) return match[1];
+      const employeeMatch = msg.match(/^message from employee\s+(\S+)/i);
+      if (employeeMatch) return employeeMatch[1];
+      const fileMatch = msg.match(/^(.*?)\s+sent a file/);
+      if (fileMatch) return fileMatch[1];
+      return 'Sender';
+    };
+
+    const extractLegacyClient = (msg: string) => {
+      const resolvedClient = notif.ticketId ? (notif.ticketId.clientName1 && notif.ticketId.clientName2 ? `${notif.ticketId.clientName1} & ${notif.ticketId.clientName2}` : notif.ticketId.clientName) : null;
+      if (resolvedClient) return resolvedClient;
+      const match = msg.match(/regarding client\s+(.*?)(?::\s*"|\s*$)/);
+      if (match) return match[1];
+      return 'N/A';
+    };
+
+    // Resolve details using helper extraction for legacy notifications
+    const resolvedSender = senderName || extractLegacySender(notif.message);
+    const resolvedClient = clientName || extractLegacyClient(notif.message);
+    const resolvedBodyText = bodyText || cleanLegacyMessage(notif.message);
 
     if (type === 'ticket_assignment') {
       return (
@@ -101,7 +141,7 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             <span style={styles.cardTitle}>📋 New Booking Request</span>
           </div>
           <div style={styles.cardBody}>
-            <div><span style={styles.cardLabel}>Employee Name :</span> <span style={styles.cardValue}>{senderName || 'Employee'}</span></div>
+            <div><span style={styles.cardLabel}>Employee Name :</span> <span style={styles.cardValue}>{resolvedSender}</span></div>
             <div><span style={styles.cardLabel}>Client Name   :</span> <span style={styles.cardValue}>{resolvedClient}</span></div>
             <div><span style={styles.cardLabel}>Time          :</span> <span style={styles.cardValue}>{timeString}</span></div>
             <div style={styles.cardStatusRow}>
@@ -119,10 +159,10 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       return (
         <div style={styles.cardContent}>
           <div style={styles.cardHeaderRow}>
-            <span style={styles.cardTitle}>💬 Message from {senderName || 'Sender'}</span>
+            <span style={styles.cardTitle}>💬 Message from {resolvedSender}</span>
           </div>
           <div style={styles.cardBody}>
-            <div><span style={styles.cardLabel}>Message :</span> <span style={styles.cardValue}>"{bodyText || notif.message}"</span></div>
+            <div><span style={styles.cardLabel}>Message :</span> <span style={styles.cardValue}>"{resolvedBodyText}"</span></div>
             <div><span style={styles.cardLabel}>Client  :</span> <span style={styles.cardValue}>{resolvedClient}</span></div>
             <div><span style={styles.cardLabel}>Time    :</span> <span style={styles.cardValue}>{timeString}</span></div>
             <div style={styles.cardStatusRow}>
@@ -143,7 +183,7 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             <span style={styles.cardTitle}>📄 Ticket PDF Received</span>
           </div>
           <div style={styles.cardBody}>
-            <div><span style={styles.cardLabel}>From          :</span> <span style={styles.cardValue}>{senderName || 'Admin'}</span></div>
+            <div><span style={styles.cardLabel}>From          :</span> <span style={styles.cardValue}>{resolvedSender}</span></div>
             <div><span style={styles.cardLabel}>PDF Belongs To:</span> <span style={styles.cardValue}>{resolvedClient}</span></div>
             <div><span style={styles.cardLabel}>File Name     :</span> <span style={styles.cardValue}>{fileName || 'Tirumala_Ticket.pdf'}</span></div>
             <div><span style={styles.cardLabel}>Time          :</span> <span style={styles.cardValue}>{timeString}</span></div>
@@ -162,7 +202,7 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     return (
       <div style={styles.cardContent}>
         <div style={styles.cardBody}>
-          <p style={{ margin: 0, fontSize: '0.88rem', color: '#e9edef' }}>{notif.message}</p>
+          <p style={{ margin: 0, fontSize: '0.88rem', color: '#e9edef' }}>{resolvedBodyText}</p>
           <div style={styles.cardStatusRow}>
             <span style={styles.cardLabel}>Status        :</span>{' '}
             <span style={isRead ? styles.statusRead : styles.statusUnread}>
