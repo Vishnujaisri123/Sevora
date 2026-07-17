@@ -48,6 +48,7 @@ const AdminDashboard: React.FC = () => {
   const [newStatus, setNewStatus] = useState('');
   const [statusComment, setStatusComment] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
+  const [showPdfUploadModal, setShowPdfUploadModal] = useState(false);
 
   // Edit Booking Dates states
   const [isEditingDates, setIsEditingDates] = useState(false);
@@ -417,14 +418,8 @@ Client: ${clientName}`;
     if (!selectedTicket || !newStatus) return;
 
     if (newStatus === 'Completed') {
-      setActiveTab('files');
-      alert('Please upload the official ticket PDF to mark this booking as Completed.');
-      setTimeout(() => {
-        const fileInput = document.getElementById('pdfUploadInput');
-        if (fileInput) {
-          fileInput.click();
-        }
-      }, 200);
+      setPdfFile(null); // Reset any previously selected file
+      setShowPdfUploadModal(true);
       return;
     }
 
@@ -436,7 +431,6 @@ Client: ${clientName}`;
       });
       setStatusComment('');
       await fetchTickets(selectedTicket._id);
-      
       alert(`Ticket status updated to "${newStatus}"`);
     } catch (err) {
       console.error('Status transition error:', err);
@@ -1410,6 +1404,62 @@ Client: ${clientName}`;
           ))}
         </AnimatePresence>
       </div>
+
+      {/* MANDATORY PDF UPLOAD MODAL FOR TICKET COMPLETION */}
+      {showPdfUploadModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent} className="glass-panel">
+            <h3 style={styles.modalTitle}>📋 Complete Booking & Upload PDF</h3>
+            <p style={styles.modalText}>
+              Please upload the official temple ticket PDF to finalize the completion of this booking for <strong>{selectedTicket?.clientName1}</strong>.
+            </p>
+            
+            <form onSubmit={handlePdfUploadSubmit} style={styles.modalForm}>
+              <div style={styles.fileInputContainer}>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                  style={{ display: 'none' }}
+                  id="modalPdfUploadInput"
+                  required
+                />
+                <label htmlFor="modalPdfUploadInput" style={styles.modalFileInputLabel}>
+                  <Upload size={20} style={{ marginRight: '8px' }} />
+                  {pdfFile ? pdfFile.name : 'Select Official PDF File'}
+                </label>
+              </div>
+
+              {pdfFile && (
+                <div style={styles.selectedFileMeta}>
+                  <span>Size: {formatFileSize(pdfFile.size)}</span>
+                </div>
+              )}
+
+              <div style={styles.modalActions}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPdfUploadModal(false);
+                    setNewStatus(selectedTicket?.status || ''); // Revert selection
+                  }}
+                  style={styles.modalCancelBtn}
+                  disabled={pdfLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={styles.modalSubmitBtn}
+                  disabled={!pdfFile || pdfLoading}
+                >
+                  {pdfLoading ? 'Uploading...' : 'Upload & Complete'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1875,6 +1925,98 @@ const styles: { [key: string]: React.CSSProperties } = {
     textDecoration: 'none',
     cursor: 'pointer',
     transition: 'background 0.2s',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1100,
+    backdropFilter: 'blur(4px)',
+  },
+  modalContent: {
+    width: '420px',
+    maxWidth: '90%',
+    backgroundColor: '#222e35',
+    padding: '24px',
+    borderRadius: '12px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+  },
+  modalTitle: {
+    margin: 0,
+    fontSize: '1.2rem',
+    fontWeight: '600',
+    color: '#e9edef',
+    marginBottom: '12px',
+  },
+  modalText: {
+    fontSize: '0.9rem',
+    color: '#d1d7db',
+    lineHeight: '1.5',
+    margin: 0,
+    marginBottom: '20px',
+  },
+  modalForm: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  fileInputContainer: {
+    width: '100%',
+  },
+  modalFileInputLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '12px',
+    backgroundColor: '#2a3942',
+    border: '2px dashed rgba(255, 255, 255, 0.15)',
+    borderRadius: '8px',
+    color: '#e9edef',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    textAlign: 'center',
+    transition: 'all 0.2s',
+  },
+  selectedFileMeta: {
+    fontSize: '0.8rem',
+    color: '#8696a0',
+    marginTop: '-8px',
+  },
+  modalActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px',
+    marginTop: '8px',
+  },
+  modalCancelBtn: {
+    backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    color: '#e9edef',
+    padding: '10px 16px',
+    borderRadius: '6px',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+  },
+  modalSubmitBtn: {
+    backgroundColor: 'var(--accent-color)',
+    border: 'none',
+    color: '#fff',
+    padding: '10px 16px',
+    borderRadius: '6px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'opacity 0.2s',
   },
   analyticsPanel: {
     display: 'flex',
