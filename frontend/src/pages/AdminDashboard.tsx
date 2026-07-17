@@ -416,6 +416,18 @@ Client: ${clientName}`;
     e.preventDefault();
     if (!selectedTicket || !newStatus) return;
 
+    if (newStatus === 'Completed') {
+      setActiveTab('files');
+      alert('Please upload the official ticket PDF to mark this booking as Completed.');
+      setTimeout(() => {
+        const fileInput = document.getElementById('pdfUploadInput');
+        if (fileInput) {
+          fileInput.click();
+        }
+      }, 200);
+      return;
+    }
+
     setStatusLoading(true);
     try {
       await axios.put(`/api/tickets/${selectedTicket._id}/status`, {
@@ -425,10 +437,6 @@ Client: ${clientName}`;
       setStatusComment('');
       await fetchTickets(selectedTicket._id);
       
-      if (newStatus === 'Completed') {
-        setActiveTab('files');
-      }
-
       alert(`Ticket status updated to "${newStatus}"`);
     } catch (err) {
       console.error('Status transition error:', err);
