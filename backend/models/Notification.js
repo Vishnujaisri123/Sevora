@@ -19,6 +19,18 @@ const NotificationSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  senderName: {
+    type: String
+  },
+  clientName: {
+    type: String
+  },
+  fileName: {
+    type: String
+  },
+  bodyText: {
+    type: String
+  },
   isRead: {
     type: Boolean,
     default: false

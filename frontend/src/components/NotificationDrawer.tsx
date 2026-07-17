@@ -10,10 +10,16 @@ interface Notification {
   createdAt: string;
   ticketId?: {
     _id: string;
-    clientName: string;
+    clientName1?: string;
+    clientName2?: string;
+    clientName?: string;
     templeName: string;
     status: string;
   };
+  senderName?: string;
+  clientName?: string;
+  fileName?: string;
+  bodyText?: string;
 }
 
 interface NotificationDrawerProps {
@@ -51,19 +57,121 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     if (!notif.isRead) {
       onMarkRead([notif._id]);
     }
-    if (notif.ticketId?._id) {
-      onSelectTicket(notif.ticketId._id);
+    const id = notif.ticketId?._id || (typeof notif.ticketId === 'string' ? notif.ticketId : undefined);
+    if (id) {
+      onSelectTicket(id);
     }
     onClose();
   };
 
-  const formatTime = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    } catch (e) {
-      return '';
+  const groupNotificationsByDate = (notifs: Notification[]) => {
+    const today: Notification[] = [];
+    const yesterday: Notification[] = [];
+    const earlier: Notification[] = [];
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
+
+    notifs.forEach(n => {
+      const date = new Date(n.createdAt);
+      if (date >= startOfToday) {
+        today.push(n);
+      } else if (date >= startOfYesterday) {
+        yesterday.push(n);
+      } else {
+        earlier.push(n);
+      }
+    });
+
+    return { today, yesterday, earlier };
+  };
+
+  const renderNotificationCardContent = (notif: Notification) => {
+    const { type, senderName, clientName, fileName, bodyText, isRead } = notif;
+    const timeString = new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Fallback client name resolution
+    const resolvedClient = clientName || (notif.ticketId ? (notif.ticketId.clientName1 && notif.ticketId.clientName2 ? `${notif.ticketId.clientName1} & ${notif.ticketId.clientName2}` : notif.ticketId.clientName) : 'N/A');
+
+    if (type === 'ticket_assignment') {
+      return (
+        <div style={styles.cardContent}>
+          <div style={styles.cardHeaderRow}>
+            <span style={styles.cardTitle}>📋 New Booking Request</span>
+          </div>
+          <div style={styles.cardBody}>
+            <div><span style={styles.cardLabel}>Employee Name :</span> <span style={styles.cardValue}>{senderName || 'Employee'}</span></div>
+            <div><span style={styles.cardLabel}>Client Name   :</span> <span style={styles.cardValue}>{resolvedClient}</span></div>
+            <div><span style={styles.cardLabel}>Time          :</span> <span style={styles.cardValue}>{timeString}</span></div>
+            <div style={styles.cardStatusRow}>
+              <span style={styles.cardLabel}>Status        :</span>{' '}
+              <span style={isRead ? styles.statusRead : styles.statusUnread}>
+                {isRead ? '✓ Read' : '● Unread'}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
     }
+
+    if (type === 'message') {
+      return (
+        <div style={styles.cardContent}>
+          <div style={styles.cardHeaderRow}>
+            <span style={styles.cardTitle}>💬 Message from {senderName || 'Sender'}</span>
+          </div>
+          <div style={styles.cardBody}>
+            <div><span style={styles.cardLabel}>Message :</span> <span style={styles.cardValue}>"{bodyText || notif.message}"</span></div>
+            <div><span style={styles.cardLabel}>Client  :</span> <span style={styles.cardValue}>{resolvedClient}</span></div>
+            <div><span style={styles.cardLabel}>Time    :</span> <span style={styles.cardValue}>{timeString}</span></div>
+            <div style={styles.cardStatusRow}>
+              <span style={styles.cardLabel}>Status  :</span>{' '}
+              <span style={isRead ? styles.statusRead : styles.statusUnread}>
+                {isRead ? '✓ Read' : '● Unread'}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (type === 'pdf_upload') {
+      return (
+        <div style={styles.cardContent}>
+          <div style={styles.cardHeaderRow}>
+            <span style={styles.cardTitle}>📄 Ticket PDF Received</span>
+          </div>
+          <div style={styles.cardBody}>
+            <div><span style={styles.cardLabel}>From          :</span> <span style={styles.cardValue}>{senderName || 'Admin'}</span></div>
+            <div><span style={styles.cardLabel}>PDF Belongs To:</span> <span style={styles.cardValue}>{resolvedClient}</span></div>
+            <div><span style={styles.cardLabel}>File Name     :</span> <span style={styles.cardValue}>{fileName || 'Tirumala_Ticket.pdf'}</span></div>
+            <div><span style={styles.cardLabel}>Time          :</span> <span style={styles.cardValue}>{timeString}</span></div>
+            <div style={styles.cardStatusRow}>
+              <span style={styles.cardLabel}>Status        :</span>{' '}
+              <span style={isRead ? styles.statusRead : styles.statusUnread}>
+                {isRead ? '✓ Read' : '● Unread'}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Default Fallback
+    return (
+      <div style={styles.cardContent}>
+        <div style={styles.cardBody}>
+          <p style={{ margin: 0, fontSize: '0.88rem', color: '#e9edef' }}>{notif.message}</p>
+          <div style={styles.cardStatusRow}>
+            <span style={styles.cardLabel}>Status        :</span>{' '}
+            <span style={isRead ? styles.statusRead : styles.statusUnread}>
+              {isRead ? '✓ Read' : '● Unread'}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -115,30 +223,34 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                 </div>
               ) : (
                 <div style={styles.list}>
-                  {notifications.map((notif) => (
-                    <div
-                      key={notif._id}
-                      onClick={() => handleNotificationClick(notif)}
-                      style={{
-                        ...styles.item,
-                        backgroundColor: notif.isRead ? 'transparent' : 'rgba(0, 168, 132, 0.08)',
-                        borderLeft: notif.isRead ? '3px solid transparent' : '3px solid var(--accent-color)'
-                      }}
-                    >
-                      <div style={styles.itemHeader}>
-                        <div style={styles.iconWrapper}>
-                          {getIcon(notif.type)}
+                  {Object.entries(groupNotificationsByDate(notifications)).map(([groupName, groupList]) => {
+                    if (groupList.length === 0) return null;
+                    return (
+                      <div key={groupName} style={{ marginBottom: '8px' }}>
+                        <div style={styles.groupHeader}>
+                          {groupName === 'today' ? 'Today' : groupName === 'yesterday' ? 'Yesterday' : 'Earlier'}
                         </div>
-                        <span style={styles.itemTime}>{formatTime(notif.createdAt)}</span>
+                        {groupList.map((notif) => (
+                          <div
+                            key={notif._id}
+                            onClick={() => handleNotificationClick(notif)}
+                            style={{
+                              ...styles.item,
+                              backgroundColor: notif.isRead ? 'rgba(32, 44, 51, 0.3)' : 'rgba(0, 168, 132, 0.08)',
+                              borderLeft: notif.isRead ? '3px solid transparent' : '3px solid var(--accent-color)'
+                            }}
+                          >
+                            <div style={styles.itemHeader}>
+                              <div style={styles.iconWrapper}>
+                                {getIcon(notif.type)}
+                              </div>
+                            </div>
+                            {renderNotificationCardContent(notif)}
+                          </div>
+                        ))}
                       </div>
-                      <p style={styles.itemMsg}>{notif.message}</p>
-                      {notif.ticketId && (
-                        <div style={styles.ticketTag}>
-                          Client: {notif.ticketId.clientName} | {notif.ticketId.templeName}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -289,6 +401,61 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: '1px solid rgba(255, 255, 255, 0.03)',
     color: '#8696a0',
     fontSize: '0.75rem',
+  },
+  groupHeader: {
+    padding: '8px 20px',
+    backgroundColor: '#202c33',
+    color: '#8696a0',
+    fontSize: '0.78rem',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: '0.8px',
+    borderBottom: '1px solid rgba(134, 150, 160, 0.1)',
+  },
+  cardContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  cardHeaderRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2px',
+  },
+  cardTitle: {
+    fontWeight: '700',
+    fontSize: '0.88rem',
+    color: '#e9edef',
+  },
+  cardBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    fontSize: '0.82rem',
+    color: '#d1d7db',
+    lineHeight: '1.4',
+    whiteSpace: 'pre-line',
+  },
+  cardLabel: {
+    color: '#8696a0',
+    fontWeight: '500',
+    marginRight: '4px',
+  },
+  cardValue: {
+    color: '#e9edef',
+    fontWeight: '600',
+  },
+  cardStatusRow: {
+    marginTop: '2px',
+  },
+  statusRead: {
+    color: '#00e676',
+    fontWeight: 'bold',
+  },
+  statusUnread: {
+    color: '#ef4444',
+    fontWeight: 'bold',
   },
 };
 

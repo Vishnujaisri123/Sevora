@@ -266,7 +266,10 @@ const AdminDashboard: React.FC = () => {
     if (selectedTicket?._id && notifications.length > 0) {
       const ticketId = selectedTicket._id;
       const unreadIds = notifications
-        .filter((n: any) => !n.isRead && n.ticketId === ticketId)
+        .filter((n: any) => {
+          const id = n.ticketId?._id || (typeof n.ticketId === 'string' ? n.ticketId : null);
+          return !n.isRead && id === ticketId;
+        })
         .map((n: any) => n._id);
 
       if (unreadIds.length > 0) {
@@ -311,9 +314,25 @@ ticket Number : #${data.serialNumber}`,
         if (selectedTicket && selectedTicket._id === data.ticketId) {
           fetchActiveTicketDetails(selectedTicket._id);
         }
-        const msg = data.message;
-        if (msg && msg.senderId !== user?.id && msg.senderRole === 'employee') {
-          showToast(msg.message.text || 'Sent an attachment', 'info', `Message from ${msg.senderName}`, data.ticketId);
+        const sender = data.senderId;
+        const senderRole = sender?.role || data.senderRole;
+        if (sender && sender._id !== user?.id && senderRole === 'employee') {
+          const matchedTicket = tickets.find(t => t._id === data.ticketId);
+          const clientName = matchedTicket ? `${matchedTicket.clientName1} & ${matchedTicket.clientName2}` : 'N/A';
+          const msgText = data.messageType === 'file' 
+            ? `Sent a file attachment: ${data.fileName || 'file'}`
+            : data.content;
+
+          const formattedMessage = `💬 Message from ${sender.username || 'Employee'}
+Message: "${msgText}"
+Client: ${clientName}`;
+
+          showToast(
+            formattedMessage,
+            'info',
+            `💬 Message from ${sender.username || 'Employee'}`,
+            data.ticketId
+          );
         }
       });
 

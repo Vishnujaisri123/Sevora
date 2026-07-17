@@ -6,7 +6,7 @@ exports.getNotifications = async (req, res) => {
     const notifications = await Notification.find({ userId: req.user.id })
       .populate({
         path: 'ticketId',
-        select: 'clientName templeName status'
+        select: 'clientName1 clientName2 templeName status'
       })
       .sort({ createdAt: -1 });
 

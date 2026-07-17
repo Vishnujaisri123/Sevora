@@ -82,12 +82,14 @@ const EmployeeDashboard: React.FC = () => {
     initData();
   }, []);
 
-  // Automatically mark notifications read when selecting a ticket
   useEffect(() => {
     if (selectedTicket?._id && notifications.length > 0) {
       const ticketId = selectedTicket._id;
       const unreadIds = notifications
-        .filter((n: any) => !n.isRead && n.ticketId === ticketId)
+        .filter((n: any) => {
+          const id = n.ticketId?._id || (typeof n.ticketId === 'string' ? n.ticketId : null);
+          return !n.isRead && id === ticketId;
+        })
         .map((n: any) => n._id);
 
       if (unreadIds.length > 0) {
@@ -104,7 +106,9 @@ const EmployeeDashboard: React.FC = () => {
 
       socket.on('notification_received', (data: any) => {
         fetchNotifications();
-        showToast(data.message || 'New notification from Admin', 'info', 'Admin Notification', data.ticketId);
+        const toastTitle = data.type === 'pdf_upload' ? '📄 Ticket PDF Received' : `💬 Message from ${data.senderName || 'Admin'}`;
+        const toastType = data.type === 'pdf_upload' ? 'success' : 'info';
+        showToast(data.message || 'New notification from Admin', toastType, toastTitle, data.ticketId);
         if (Notification.permission === 'granted') {
           new Notification('Temple Ticket Alert', {
             body: data.message,

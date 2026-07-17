@@ -96,15 +96,20 @@ exports.sendMessage = async (req, res) => {
     // Notify recipient (Admin or assigned Employee)
     const recipientId = req.user.role === 'admin' ? ticket.employeeId : (ticket.adminId || null);
     if (recipientId) {
-      const msgNotification = req.user.role === 'admin' 
-        ? `${req.user.username} sent a message regarding client ${ticket.clientName1} & ${ticket.clientName2}: "${content.substring(0, 40)}${content.length > 40 ? '...' : ''}"`
-        : `message from employee ${req.user.username}\n${content}`;
+      const senderName = req.user.username;
+      const clientName = `${ticket.clientName1} & ${ticket.clientName2}`;
+      const msgNotification = `💬 Message from ${senderName}
+Message: "${content}"
+Client: ${clientName}`;
       
       const newNotif = new Notification({
         userId: recipientId,
         ticketId: ticket._id,
         type: 'message',
-        message: msgNotification
+        message: msgNotification,
+        senderName,
+        clientName,
+        bodyText: content
       });
       await newNotif.save();
 
@@ -113,7 +118,10 @@ exports.sendMessage = async (req, res) => {
         io.to(recipientId.toString()).emit('notification_received', {
           message: msgNotification,
           ticketId: ticket._id,
-          type: 'message'
+          type: 'message',
+          senderName,
+          clientName,
+          bodyText: content
         });
       }
     }
@@ -171,15 +179,21 @@ exports.sendFileMessage = async (req, res) => {
     // Notify recipient
     const recipientId = req.user.role === 'admin' ? ticket.employeeId : (ticket.adminId || null);
     if (recipientId) {
-      const msgNotification = req.user.role === 'admin'
-        ? `${req.user.username} sent a file attachment for client ${ticket.clientName1} & ${ticket.clientName2}`
-        : `message from employee ${req.user.username}\n[File Attachment]`;
+      const senderName = req.user.username;
+      const clientName = `${ticket.clientName1} & ${ticket.clientName2}`;
+      const msgNotification = `💬 Message from ${senderName}
+Message: "Sent a file attachment: ${message.fileName || 'file'}"
+Client: ${clientName}`;
       
       const newNotif = new Notification({
         userId: recipientId,
         ticketId: ticket._id,
         type: 'message',
-        message: msgNotification
+        message: msgNotification,
+        senderName,
+        clientName,
+        fileName: message.fileName,
+        bodyText: `Sent a file attachment: ${message.fileName || 'file'}`
       });
       await newNotif.save();
 
@@ -188,7 +202,11 @@ exports.sendFileMessage = async (req, res) => {
         io.to(recipientId.toString()).emit('notification_received', {
           message: msgNotification,
           ticketId: ticket._id,
-          type: 'message'
+          type: 'message',
+          senderName,
+          clientName,
+          fileName: message.fileName,
+          bodyText: `Sent a file attachment: ${message.fileName || 'file'}`
         });
       }
     }

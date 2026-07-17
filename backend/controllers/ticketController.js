@@ -19,12 +19,16 @@ const logActivity = async (ticketId, userId, action, statusBefore, statusAfter, 
 };
 
 // Helper to create notifications
-const createNotification = async (userId, ticketId, type, message) => {
+const createNotification = async (userId, ticketId, type, message, senderName, clientName, fileName, bodyText) => {
   const notif = new Notification({
     userId,
     ticketId,
     type,
-    message
+    message,
+    senderName,
+    clientName,
+    fileName,
+    bodyText
   });
   await notif.save();
   return notif;
@@ -278,13 +282,20 @@ exports.sendToAdmin = async (req, res) => {
 
     // Notify all admins
     const admins = await User.find({ role: 'admin' });
-    const notificationMessage = `New booking request by the client: ${ticket.clientName1}
-employee Name : ${req.user.username}
-client Names : ${ticket.clientName1} & ${ticket.clientName2}
-ticket Number : #${ticket.serialNumber}`;
+    const clientFullName = `${ticket.clientName1} & ${ticket.clientName2}`;
+    const notificationMessage = `📋 New Booking Request
+Employee Name : ${req.user.username}
+Client Name   : ${clientFullName}`;
     
     for (const admin of admins) {
-      await createNotification(admin._id, ticket._id, 'ticket_assignment', notificationMessage);
+      await createNotification(
+        admin._id, 
+        ticket._id, 
+        'ticket_assignment', 
+        notificationMessage,
+        req.user.username,
+        clientFullName
+      );
     }
 
     // Trigger socket broadcast to admins
@@ -293,7 +304,7 @@ ticket Number : #${ticket.serialNumber}`;
       io.to('admins').emit('new_ticket_submitted', {
         ticketId: ticket._id,
         serialNumber: ticket.serialNumber,
-        clientName: `${ticket.clientName1} & ${ticket.clientName2}`,
+        clientName: clientFullName,
         clientName1: ticket.clientName1,
         templeName: ticket.templeName,
         status: ticket.status,
@@ -304,7 +315,9 @@ ticket Number : #${ticket.serialNumber}`;
         io.to(admin._id.toString()).emit('notification_received', {
           message: notificationMessage,
           ticketId: ticket._id,
-          type: 'ticket_assignment'
+          type: 'ticket_assignment',
+          senderName: req.user.username,
+          clientName: clientFullName
         });
       });
     }
@@ -408,8 +421,24 @@ exports.uploadPdf = async (req, res) => {
     await logActivity(ticket._id, req.user.id, `Uploaded Ticket PDF (v${versionNumber})`, previousStatus, 'PDF Uploaded', `File: ${req.file.originalname}`);
 
     // Notify employee
-    const employeeNotification = `Official ticket PDF uploaded for ${ticket.clientName1} & ${ticket.clientName2} - v${versionNumber}`;
-    await createNotification(ticket.employeeId, ticket._id, 'pdf_upload', employeeNotification);
+    const adminName = req.user.username;
+    const clientName = `${ticket.clientName1} & ${ticket.clientName2}`;
+    const fileName = req.file.originalname;
+
+    const employeeNotification = `📄 Ticket PDF Received
+From          : ${adminName}
+PDF Belongs To: ${clientName}
+File Name     : ${fileName}`;
+
+    await createNotification(
+      ticket.employeeId, 
+      ticket._id, 
+      'pdf_upload', 
+      employeeNotification,
+      adminName,
+      clientName,
+      fileName
+    );
 
     // Automatically create and save the message in the chat database
     const fileMessage = new Message({
@@ -445,7 +474,10 @@ exports.uploadPdf = async (req, res) => {
       io.to(ticket.employeeId.toString()).emit('notification_received', {
         message: employeeNotification,
         ticketId: ticket._id,
-        type: 'pdf_upload'
+        type: 'pdf_upload',
+        senderName: adminName,
+        clientName: clientName,
+        fileName: fileName
       });
     }
 
