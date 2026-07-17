@@ -37,7 +37,19 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   onMarkRead,
   onSelectTicket
 }) => {
+  const visibleNotifications = notifications.filter(n => !n.isRead);
   
+  const cleanEmailToName = (str: string) => {
+    if (!str) return '';
+    let name = str.includes('@') ? str.split('@')[0] : str;
+    name = name.replace(/[._-]/g, ' ');
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+      .trim();
+  };
+
   const getIcon = (type: string) => {
     switch (type) {
       case 'message':
@@ -129,8 +141,8 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
       return 'N/A';
     };
 
-    // Resolve details using helper extraction for legacy notifications
-    const resolvedSender = senderName || extractLegacySender(notif.message);
+    // Resolve details using helper extraction for legacy notifications (and clean email usernames)
+    const resolvedSender = cleanEmailToName(senderName || extractLegacySender(notif.message));
     const resolvedClient = clientName || extractLegacyClient(notif.message);
     const resolvedBodyText = bodyText || cleanLegacyMessage(notif.message);
 
@@ -239,7 +251,7 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             <div style={styles.header}>
               <h3 style={styles.title}>Notifications</h3>
               <div style={styles.headerActions}>
-                {notifications.some(n => !n.isRead) && (
+                {visibleNotifications.length > 0 && (
                   <button 
                     onClick={() => onMarkRead()} 
                     style={styles.markReadBtn}
@@ -255,7 +267,7 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             </div>
 
             <div style={styles.body}>
-              {notifications.length === 0 ? (
+              {visibleNotifications.length === 0 ? (
                 <div style={styles.emptyState}>
                   <BellOff size={48} style={styles.emptyIcon} />
                   <p style={styles.emptyText}>No notifications yet</p>
@@ -263,7 +275,7 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                 </div>
               ) : (
                 <div style={styles.list}>
-                  {Object.entries(groupNotificationsByDate(notifications)).map(([groupName, groupList]) => {
+                  {Object.entries(groupNotificationsByDate(visibleNotifications)).map(([groupName, groupList]) => {
                     if (groupList.length === 0) return null;
                     return (
                       <div key={groupName} style={{ marginBottom: '8px' }}>

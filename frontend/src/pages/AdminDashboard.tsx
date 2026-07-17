@@ -267,6 +267,17 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const cleanEmailToName = (str: string) => {
+    if (!str) return '';
+    let name = str.includes('@') ? str.split('@')[0] : str;
+    name = name.replace(/[._-]/g, ' ');
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+      .trim();
+  };
+
   useEffect(() => {
     fetchTickets();
     fetchNotifications();
@@ -320,9 +331,10 @@ const AdminDashboard: React.FC = () => {
       socket.on('new_ticket_submitted', (data: any) => {
         fetchTickets();
         fetchNotifications();
+        const cleanEmpName = cleanEmailToName(data.submittedBy);
         showToast(
           `New booking request by the client: ${data.clientName1 || data.clientName.split('&')[0].trim()}
-employee Name : ${data.submittedBy}
+employee Name : ${cleanEmpName}
 client Names : ${data.clientName}
 ticket Number : #${data.serialNumber}`, 
           'success', 
@@ -359,14 +371,15 @@ ticket Number : #${data.serialNumber}`,
             ? `Sent a file attachment: ${data.fileName || 'file'}`
             : data.content;
 
-          const formattedMessage = `💬 Message from ${sender.username || 'Employee'}
+          const cleanSenderName = cleanEmailToName(sender.username);
+          const formattedMessage = `💬 Message from ${cleanSenderName}
 Message: "${msgText}"
 Client: ${clientName}`;
 
           showToast(
             formattedMessage,
             'info',
-            `💬 Message from ${sender.username || 'Employee'}`,
+            `💬 Message from ${cleanSenderName}`,
             data.ticketId
           );
         }

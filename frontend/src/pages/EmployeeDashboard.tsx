@@ -91,12 +91,22 @@ const EmployeeDashboard: React.FC = () => {
           return !n.isRead && id === ticketId;
         })
         .map((n: any) => n._id);
-
       if (unreadIds.length > 0) {
         handleMarkNotificationsRead(unreadIds);
       }
     }
   }, [selectedTicket?._id, notifications]);
+
+  const cleanEmailToName = (str: string) => {
+    if (!str) return '';
+    let name = str.includes('@') ? str.split('@')[0] : str;
+    name = name.replace(/[._-]/g, ' ');
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+      .trim();
+  };
 
   // Set up socket listeners for real-time status and notifications
   useEffect(() => {
@@ -106,9 +116,17 @@ const EmployeeDashboard: React.FC = () => {
 
       socket.on('notification_received', (data: any) => {
         fetchNotifications();
-        const toastTitle = data.type === 'pdf_upload' ? '📄 Ticket PDF Received' : `💬 Message from ${data.senderName || 'Admin'}`;
+        const cleanSender = cleanEmailToName(data.senderName || 'Admin');
+        const toastTitle = data.type === 'pdf_upload' ? '📄 Ticket PDF Received' : `💬 Message from ${cleanSender}`;
         const toastType = data.type === 'pdf_upload' ? 'success' : 'info';
-        showToast(data.message || 'New notification from Admin', toastType, toastTitle, data.ticketId);
+        
+        let msgBody = data.message || 'New notification from Admin';
+        if (data.senderName) {
+          const cleanSenderName = cleanEmailToName(data.senderName);
+          msgBody = msgBody.replace(new RegExp(data.senderName, 'g'), cleanSenderName);
+        }
+
+        showToast(msgBody, toastType, toastTitle, data.ticketId);
         if (Notification.permission === 'granted') {
           new Notification('Temple Ticket Alert', {
             body: data.message,
