@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Plus, MessageSquare, Edit2, Trash2, CheckCircle, Send, 
   Clock, Calendar, Users, FileText, CheckCheck, Eye,
-  Smartphone, Coins
+  Smartphone, Coins, IndianRupee, TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -322,6 +322,26 @@ const EmployeeDashboard: React.FC = () => {
             <div style={styles.metricInfo}>
               <span style={styles.metricLabel}>Completed</span>
               <h2 style={styles.metricValue}>{metrics.completed}</h2>
+            </div>
+          </div>
+
+          <div className="glass-panel" style={styles.metricCard}>
+            <div style={{ ...styles.metricIconContainer, backgroundColor: 'rgba(0, 188, 212, 0.15)' }}>
+              <IndianRupee size={22} style={{ color: '#00bcd4' }} />
+            </div>
+            <div style={styles.metricInfo}>
+              <span style={styles.metricLabel}>Total Money</span>
+              <h2 style={styles.metricValue}>₹{metrics.completed * 200}</h2>
+            </div>
+          </div>
+
+          <div className="glass-panel" style={styles.metricCard}>
+            <div style={{ ...styles.metricIconContainer, backgroundColor: 'rgba(236, 64, 122, 0.15)' }}>
+              <TrendingUp size={22} style={{ color: '#ec407a' }} />
+            </div>
+            <div style={styles.metricInfo}>
+              <span style={styles.metricLabel}>Profit</span>
+              <h2 style={styles.metricValue}>₹{metrics.completed * 50}</h2>
             </div>
           </div>
         </div>

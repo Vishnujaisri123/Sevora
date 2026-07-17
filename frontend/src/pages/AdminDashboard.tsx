@@ -9,7 +9,7 @@ import {
   Search, Filter, Calendar, Users, Shield, Clock, FileText, 
   Upload, Download, Plus, RefreshCw, BarChart2, Check, DownloadCloud,
   CheckCheck, MessageSquare, AlertCircle, X, ChevronRight, FileUp,
-  Trash2, Copy
+  Trash2, Copy, IndianRupee, TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AvailabilityCalendar } from '../components/AvailabilityCalendar';
@@ -683,12 +683,12 @@ ticket Number : #${data.serialNumber}`,
                   <h3 style={{ ...styles.statValue, color: 'var(--status-completed)' }}>{stats.completed}</h3>
                 </div>
                 <div className="glass-panel" style={styles.statBox}>
-                  <span style={styles.statLabel}>Total Money (₹200/ticket)</span>
-                  <h3 style={{ ...styles.statValue, color: '#00e676' }}>₹{stats.completed * 200}</h3>
+                  <span style={styles.statLabel}>Total Money</span>
+                  <h3 style={{ ...styles.statValue, color: '#00bcd4' }}>₹{stats.completed * 200}</h3>
                 </div>
                 <div className="glass-panel" style={styles.statBox}>
-                  <span style={styles.statLabel}>Profit (₹50/ticket)</span>
-                  <h3 style={{ ...styles.statValue, color: '#00b0ff' }}>₹{stats.completed * 50}</h3>
+                  <span style={styles.statLabel}>Profit</span>
+                  <h3 style={{ ...styles.statValue, color: '#ec407a' }}>₹{stats.completed * 50}</h3>
                 </div>
                 <div className="glass-panel" style={styles.statBox}>
                   <span style={styles.statLabel}>PhonePe Payments</span>
