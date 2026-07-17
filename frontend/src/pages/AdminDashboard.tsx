@@ -49,6 +49,11 @@ const AdminDashboard: React.FC = () => {
   const [statusComment, setStatusComment] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
 
+  // Edit Booking Dates states
+  const [isEditingDates, setIsEditingDates] = useState(false);
+  const [editBookersDate, setEditBookersDate] = useState('');
+  const [editBookedDate, setEditBookedDate] = useState('');
+
   // Availability states
   const [showAvailability, setShowAvailability] = useState(false);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
@@ -228,6 +233,37 @@ const AdminDashboard: React.FC = () => {
       setNewStatus(res.data.ticket.status);
     } catch (err) {
       console.error('Error fetching ticket details:', err);
+    }
+  };
+
+  const toYYYYMMDD = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      return '';
+    }
+  };
+
+  const handleSaveDates = async () => {
+    if (!ticketDetails) return;
+    try {
+      const res = await axios.put(`/api/tickets/${ticketDetails._id}`, {
+        bookersDate: editBookersDate,
+        bookedDate: editBookedDate
+      });
+      showToast('Booking dates updated successfully', 'success', 'Dates Updated');
+      setTicketDetails(res.data);
+      setIsEditingDates(false);
+      fetchActiveTicketDetails(ticketDetails._id);
+      fetchTickets();
+    } catch (err) {
+      console.error('Error updating booking dates:', err);
+      showToast('Failed to update booking dates', 'error', 'Error');
     }
   };
 
@@ -1005,16 +1041,53 @@ Client: ${clientName}`;
                     </div>
                   </div>
 
-                  <div style={styles.infoSection}>
-                    <h4 style={styles.detailSectionTitle}>Darshan Details</h4>
+                   <div style={styles.infoSection}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <h4 style={{ ...styles.detailSectionTitle, margin: 0 }}>Darshan Details</h4>
+                      {!isEditingDates ? (
+                        <button
+                          onClick={() => {
+                            setEditBookersDate(toYYYYMMDD(ticketDetails.bookersDate));
+                            setEditBookedDate(toYYYYMMDD(ticketDetails.bookedDate));
+                            setIsEditingDates(true);
+                          }}
+                          style={styles.editDateBtn}
+                        >
+                          Edit
+                        </button>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={handleSaveDates} style={styles.saveDateBtn}>Save</button>
+                          <button onClick={() => setIsEditingDates(false)} style={styles.cancelDateBtn}>Cancel</button>
+                        </div>
+                      )}
+                    </div>
                     <div style={styles.infoGrid}>
                       <div style={styles.infoItem}>
                         <span style={styles.infoLabel}>Booker's Date</span>
-                        <span style={styles.infoValue}>{formatDate(ticketDetails.bookersDate)}</span>
+                        {isEditingDates ? (
+                          <input
+                            type="date"
+                            value={editBookersDate}
+                            onChange={(e) => setEditBookersDate(e.target.value)}
+                            style={styles.editDateInput}
+                          />
+                        ) : (
+                          <span style={styles.infoValue}>{formatDate(ticketDetails.bookersDate)}</span>
+                        )}
                       </div>
                       <div style={styles.infoItem}>
                         <span style={styles.infoLabel}>Booked Date</span>
-                        <span style={styles.infoValue}>{formatDate(ticketDetails.bookedDate)}</span>
+                        {isEditingDates ? (
+                          <input
+                            type="date"
+                            value={editBookedDate}
+                            onChange={(e) => setEditBookedDate(e.target.value)}
+                            style={styles.editDateInput}
+                          />
+                        ) : (
+                          <span style={styles.infoValue}>{formatDate(ticketDetails.bookedDate)}</span>
+                        )}
                       </div>
                       <div style={{ ...styles.infoItem, gridColumn: 'span 2' }}>
                         <span style={styles.infoLabel}>Time Slot</span>
@@ -1550,6 +1623,48 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '0.88rem',
     fontWeight: '500',
     color: '#e9edef',
+  },
+  editDateBtn: {
+    background: 'none',
+    border: 'none',
+    color: 'var(--accent-color)',
+    fontSize: '0.78rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    transition: 'background 0.2s',
+  },
+  saveDateBtn: {
+    backgroundColor: 'var(--accent-color)',
+    border: 'none',
+    color: '#fff',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    borderRadius: '4px',
+  },
+  cancelDateBtn: {
+    backgroundColor: '#3b4a54',
+    border: 'none',
+    color: '#e9edef',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    borderRadius: '4px',
+  },
+  editDateInput: {
+    backgroundColor: '#2a3942',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '6px',
+    color: '#e9edef',
+    padding: '4px 8px',
+    fontSize: '0.82rem',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   notesBox: {
     backgroundColor: 'rgba(0, 0, 0, 0.15)',
