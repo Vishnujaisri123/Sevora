@@ -243,6 +243,24 @@ const AdminDashboard: React.FC = () => {
     }
   }, [selectedTicket]);
 
+  // Automatically update ticket status to "Processing" when opened by Admin
+  useEffect(() => {
+    if (selectedTicket && selectedTicket.status === 'Waiting for Admin') {
+      const autoTransitionToProcessing = async () => {
+        try {
+          await axios.put(`/api/tickets/${selectedTicket._id}/status`, {
+            status: 'Processing',
+            comment: 'Auto-transitioned to Processing upon ticket opening'
+          });
+          await fetchTickets(selectedTicket._id);
+        } catch (err) {
+          console.error('Error auto-updating status to Processing:', err);
+        }
+      };
+      autoTransitionToProcessing();
+    }
+  }, [selectedTicket?._id, selectedTicket?.status]);
+
   // Automatically mark notifications read when selecting a ticket
   useEffect(() => {
     if (selectedTicket?._id && notifications.length > 0) {
@@ -1026,16 +1044,6 @@ ticket Number : #${data.serialNumber}`,
                           <option value="Processing">Processing</option>
                           <option value="Completed">Completed</option>
                         </select>
-                      </div>
-
-                      <div style={{ marginBottom: '12px' }}>
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="Optional audit comment..."
-                          value={statusComment}
-                          onChange={(e) => setStatusComment(e.target.value)}
-                        />
                       </div>
 
                       <button 
