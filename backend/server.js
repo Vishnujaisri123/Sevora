@@ -62,6 +62,23 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Serve Frontend Static Files (in production / built environment)
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendDistPath));
+
+app.get('*', (req, res, next) => {
+  // If the request starts with /api or /uploads, let it go to the backend handlers
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendDistPath, 'index.html'), (err) => {
+    if (err) {
+      // If index.html doesn't exist (e.g. in dev mode), continue to default 404
+      next();
+    }
+  });
+});
+
 // Initialize Socket Manager
 socketManager(io);
 
