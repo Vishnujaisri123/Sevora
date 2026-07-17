@@ -51,9 +51,14 @@ exports.createTicket = async (req, res) => {
       return res.status(400).json({ message: 'Missing required client fields' });
     }
 
-    // Find the highest serialNumber
-    const lastTicket = await Ticket.findOne().sort({ serialNumber: -1 });
-    const nextSerialNumber = lastTicket && lastTicket.serialNumber ? lastTicket.serialNumber + 1 : 1;
+    // Find the lowest available serialNumber (filling any gaps from deleted tickets)
+    const existingTickets = await Ticket.find({}, { serialNumber: 1 }).sort({ serialNumber: 1 });
+    const existingSerials = existingTickets.map(t => t.serialNumber).filter(Boolean);
+    let nextSerialNumber = 1;
+    const serialsSet = new Set(existingSerials);
+    while (serialsSet.has(nextSerialNumber)) {
+      nextSerialNumber++;
+    }
 
     const ticket = new Ticket({
       serialNumber: nextSerialNumber,

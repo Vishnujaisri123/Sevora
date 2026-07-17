@@ -53,29 +53,28 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', time: new Date() });
 });
 
+// Serve Frontend Static Files (if dist exists)
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendDistPath));
+
+// For any route not handled by API or static files, serve index.html (SPA routing fallback)
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendDistPath, 'index.html'), (err) => {
+    if (err) {
+      res.status(404).send('Frontend not built. Please run "npm run build" in the frontend folder.');
+    }
+  });
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(err.status || 500).json({
     message: err.message || 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err : {}
-  });
-});
-
-// Serve Frontend Static Files (in production / built environment)
-const frontendDistPath = path.join(__dirname, '../frontend/dist');
-app.use(express.static(frontendDistPath));
-
-app.get('*', (req, res, next) => {
-  // If the request starts with /api or /uploads, let it go to the backend handlers
-  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
-    return next();
-  }
-  res.sendFile(path.join(frontendDistPath, 'index.html'), (err) => {
-    if (err) {
-      // If index.html doesn't exist (e.g. in dev mode), continue to default 404
-      next();
-    }
   });
 });
 
