@@ -304,7 +304,7 @@ const EmployeeDashboard: React.FC = () => {
         title="Employee Portal - Ticket Bookings"
       />
 
-      <div style={styles.dashboardContainer}>
+      <div className="dashboard-content" style={styles.dashboardContainer}>
         {/* Metrics Grid */}
         <div style={styles.metricsGrid}>
           <div className="glass-panel" style={styles.metricCard}>

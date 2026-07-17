@@ -303,6 +303,40 @@ body {
   .whatsapp-detail-panel {
     display: none;
   }
+  .whatsapp-detail-panel.mobile-visible {
+    display: flex !important;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 20;
+    background-color: var(--bg-panel-right);
+  }
+  
+  /* Navbar mobile adjustments */
+  .navbar-user-info {
+    display: none !important;
+  }
+  .navbar-logout-text {
+    display: none !important;
+  }
+  .navbar-brand-name {
+    font-size: 0.9rem !important;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .navbar-system-status {
+    font-size: 0.65rem !important;
+  }
+  header {
+    padding: 0 12px !important;
+  }
+  .dashboard-content {
+    padding: 12px !important;
+  }
 }
 
 /* Skeleton loader animations */

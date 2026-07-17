@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { 
   Send, Paperclip, X, Download, CornerUpLeft, Edit3, Trash2, 
-  Smile, AlertTriangle, ArrowLeft, MoreVertical, File, Check, CheckCheck 
+  Smile, AlertTriangle, ArrowLeft, MoreVertical, File, Check, CheckCheck, Info 
 } from 'lucide-react';
 
 interface Message {
@@ -36,6 +36,7 @@ interface ChatAreaProps {
   recipientName: string;
   recipientRole: 'admin' | 'employee';
   onClose?: () => void;
+  onToggleDetails?: () => void;
   ticketStatus: string;
   serialNumber?: number;
 }
@@ -46,6 +47,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   recipientName,
   recipientRole,
   onClose,
+  onToggleDetails,
   ticketStatus,
   serialNumber
 }) => {
@@ -455,6 +457,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           </div>
         </div>
         <div style={styles.headerRight}>
+          {onToggleDetails && (
+            <button onClick={onToggleDetails} style={styles.headerIconBtn} title="View Details">
+              <Info size={20} />
+            </button>
+          )}
           <button style={styles.headerIconBtn}><MoreVertical size={20} /></button>
         </div>
       </div>

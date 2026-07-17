@@ -9,7 +9,7 @@ import {
   Search, Filter, Calendar, Users, Shield, Clock, FileText, 
   Upload, Download, Plus, RefreshCw, BarChart2, Check, DownloadCloud,
   CheckCheck, MessageSquare, AlertCircle, X, ChevronRight, FileUp,
-  Trash2, Copy, IndianRupee, TrendingUp
+  Trash2, Copy, IndianRupee, TrendingUp, ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AvailabilityCalendar } from '../components/AvailabilityCalendar';
@@ -53,6 +53,7 @@ const AdminDashboard: React.FC = () => {
   const [isEditingDates, setIsEditingDates] = useState(false);
   const [editBookersDate, setEditBookersDate] = useState('');
   const [editBookedDate, setEditBookedDate] = useState('');
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
 
   // Availability states
   const [showAvailability, setShowAvailability] = useState(false);
@@ -605,7 +606,7 @@ Client: ${clientName}`;
         {/* ==========================================
             LEFT SIDEBAR (WhatsApp Conversations List)
             ========================================== */}
-        <div className="whatsapp-sidebar">
+        <div className={`whatsapp-sidebar ${selectedTicket ? 'hidden' : ''}`}>
           {/* Sidebar Header controls */}
           <div style={styles.sidebarHeader}>
             <div style={styles.sidebarActions}>
@@ -668,7 +669,7 @@ Client: ${clientName}`;
                 return (
                   <div
                     key={ticket._id}
-                    onClick={() => { setSelectedTicket(ticket); setShowAnalytics(false); setShowAvailability(false); }}
+                    onClick={() => { setSelectedTicket(ticket); setShowAnalytics(false); setShowAvailability(false); setShowMobileDetails(false); }}
                     style={{
                       ...styles.convoItem,
                       backgroundColor: isActive ? '#2a3942' : 'transparent',
@@ -740,7 +741,7 @@ Client: ${clientName}`;
         <div className="whatsapp-chat-area">
           {showAnalytics ? (
             /* EXECUTIVE ANALYTICS DASHBOARD */
-            <div style={styles.analyticsPanel}>
+            <div className="dashboard-content" style={styles.analyticsPanel}>
               <div style={styles.analyticsHeader}>
                 <div>
                   <h2 style={styles.analyticsTitle}>Analytics & Performance</h2>
@@ -975,6 +976,8 @@ Client: ${clientName}`;
               recipientRole="employee"
               ticketStatus={selectedTicket.status}
               serialNumber={selectedTicket.serialNumber}
+              onClose={() => setSelectedTicket(null)}
+              onToggleDetails={() => setShowMobileDetails(!showMobileDetails)}
             />
           ) : (
             /* EMPTY CHAT SCREEN */
@@ -997,7 +1000,17 @@ Client: ${clientName}`;
             RIGHT SIDEBAR (Permanent Ticket Details / Timeline / Upload PDF)
             ========================================== */}
         {selectedTicket && ticketDetails && (
-          <div className="whatsapp-detail-panel">
+          <div className={`whatsapp-detail-panel ${showMobileDetails ? 'mobile-visible' : ''}`}>
+            {showMobileDetails && (
+              <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-color)', backgroundColor: '#202c33' }}>
+                <button 
+                  onClick={() => setShowMobileDetails(false)} 
+                  style={{ background: 'none', border: 'none', color: '#8696a0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <ArrowLeft size={20} /> Back to Chat
+                </button>
+              </div>
+            )}
             {/* Panel Tabs */}
             <div style={styles.detailTabs}>
               <button 

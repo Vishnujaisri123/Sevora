@@ -54,8 +54,8 @@ const Navbar: React.FC<NavbarProps> = ({
       <div style={styles.brand}>
         <span style={styles.logo}>🛕</span>
         <div style={styles.brandText}>
-          <h2 style={styles.brandName}>{title || 'Temple Ticket Platform'}</h2>
-          <span style={styles.systemStatus}>• Connected</span>
+          <h2 className="navbar-brand-name" style={styles.brandName}>{title || 'Temple Ticket Platform'}</h2>
+          <span className="navbar-system-status" style={styles.systemStatus}>• Connected</span>
         </div>
       </div>
 
@@ -114,7 +114,7 @@ const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
             
-            <div style={styles.userInfo}>
+            <div className="navbar-user-info" style={styles.userInfo}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={styles.username}>{user.username}</span>
                 <button
@@ -150,7 +150,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
         <button onClick={logout} style={styles.logoutBtn} title="Sign Out">
           <LogOut size={18} />
-          <span style={styles.logoutText}>Sign Out</span>
+          <span className="navbar-logout-text" style={styles.logoutText}>Sign Out</span>
         </button>
       </div>
 
